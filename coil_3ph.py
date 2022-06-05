@@ -68,10 +68,9 @@ class Coil3Ph:
             Plot an arc.
             """
 
-            angles = np.sort(angles)
             d_theta = np.diff(angles) / n
 
-            theta = np.arange(angles[0], angles[1] + d_theta, d_theta)
+            theta = np.arange(angles[0], angles[1], d_theta)
             x = radius * np.cos(theta)
             y = radius * np.sin(theta)
 
@@ -82,28 +81,17 @@ class Coil3Ph:
         y = np.array([])
         for seg in self._geo:
             if seg[0] == "line":
-                # x.append(seg[1][0])
                 x = np.append(x, seg[1][0])
-                # x.append(seg[1][2])
                 x = np.append(x, seg[1][2])
-                # y.append(seg[1][1])
                 y = np.append(y, seg[1][1])
-                # y.append(seg[1][3])
                 y = np.append(y, seg[1][3])
 
             elif seg[0] == "arc":
                 # Pretty arc.
                 radius = np.sqrt(seg[1][0] ** 2 + seg[1][1] ** 2)
-                a1 = np.arctan([seg[1][0], seg[1][1]])
-                a2 = np.arctan([seg[1][4], seg[1][5]])
+                a1 = np.arctan2(seg[1][1], seg[1][0])
+                a2 = np.arctan2(seg[1][5], seg[1][4])
                 arc_x, arc_y = arc(radius, [a1, a2])
-
-                # x.append(seg[1][0])
-                # x.append(seg[1][2])
-                # x.append(seg[1][4])
-                # y.append(seg[1][1])
-                # y.append(seg[1][3])
-                # y.append(seg[1][5])
 
                 x = np.append(x, arc_x)
                 y = np.append(y, arc_y)
@@ -111,6 +99,7 @@ class Coil3Ph:
             else:
                 raise ValueError(f"Unsupported geometry type: {seg[0]}")
 
+        # Generate the plot
         trc = go.Scatter(x=x, y=y)
         fig.add_trace(trc)
 
@@ -236,4 +225,5 @@ if __name__ == "__main__":
     coil._width = 0.25
     coil._spacing = 0.25
     coil.GenerateGeo()
+    print(coil._geo)
     coil.Plot()
