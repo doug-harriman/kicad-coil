@@ -130,6 +130,7 @@ class Coil3Ph:
 
             # Effective arc length based on track geometry
             len_arc = self._spacing + self._width
+            len_arc *= 1.25
 
             # Angle to get that arc at the current radius
             theta = len_arc / radius
@@ -140,6 +141,7 @@ class Coil3Ph:
         # First loop will have outside edge on the OD
         rad_out = self._od / 2 + self._width / 2
         rad_pitch = self._width + self._spacing
+        rad_pitch *= 2
 
         radii = np.arange(rad_out, 0, -rad_pitch)
         radii = radii[np.where(radii > self._id / 2)]
