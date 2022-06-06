@@ -130,7 +130,7 @@ class Coil3Ph:
 
             # Effective arc length based on track geometry
             len_arc = self._spacing + self._width
-            len_arc *= 1.25
+            len_arc *= np.pi / 2
 
             # Angle to get that arc at the current radius
             theta = len_arc / radius
@@ -141,7 +141,6 @@ class Coil3Ph:
         # First loop will have outside edge on the OD
         rad_out = self._od / 2 + self._width / 2
         rad_pitch = self._width + self._spacing
-        rad_pitch *= 2
 
         radii = np.arange(rad_out, 0, -rad_pitch)
         radii = radii[np.where(radii > self._id / 2)]
@@ -156,23 +155,28 @@ class Coil3Ph:
 
             angles = np.vstack((angles, angles_new))
 
+        # At some the radius gets too small, and lines may start crossing.
+        # Keep the sector angle > 0
         da = np.diff(angles)
         idx = np.where(da > 0)[0]
 
+        # Generate list of angles to process through
         radii = radii[idx]
         angles = angles[idx, :]
         angles = angles.flatten()
 
+        # Generate list of radii to process through
         r = np.zeros((len(radii) * 2,))
         r[1::2] = radii
         r[::2] = np.flip(radii)
         r = r[: int(len(r) / 2)]
 
-        print(r)
-        print(angles)
-
         self._turns = 0
         self._geo = []
+
+        # First segment is the entry segment from the connection trace.
+        line = [rad_out + self._width + self._spacing, 0, r[0], 0]  # Inside radius
+        self._geo.append(("line", line))
 
         i = 0
         while i + 1 < len(r):
@@ -212,10 +216,12 @@ class Coil3Ph:
         ]
         self._geo.append(("arc", arc))
 
-        # self.Plot()
+    def ToKiCad(self,filename:str = None):
+        """
+        Converts geometry to KiCAD PCB format.
+        """
 
-
-# %%
+#%%
 if __name__ == "__main__":
     fn = "coil.config"
 
@@ -223,9 +229,8 @@ if __name__ == "__main__":
     coil = Coil3Ph()
     coil._replication = 1
     coil._od = 20
-    coil._id = 10
+    coil._id = 4
     coil._width = 0.25
     coil._spacing = 0.25
     coil.GenerateGeo()
-    print(coil._geo)
     coil.Plot()
