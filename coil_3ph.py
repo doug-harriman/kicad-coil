@@ -6,11 +6,14 @@
 # URL: https://dev-docs.kicad.org/en/file-formats/sexpr-pcb/#_graphic_items_section:~:text=on%20the%20board.-,Tracks%20Section,-This%20section%20lists
 
 
+from typing import Tuple
 import numpy as np
 import plotly.graph_objects as go
 import configparser
 from pint import UnitRegistry
 import os
+import uuid
+import copy
 
 # KiCAD Python
 # pip install kicad_python
@@ -19,7 +22,7 @@ import os
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# TODO: Classes for elements (lines, arcs, text) so that I can provide methods to flip, rotate, move, etc.
+# TODO: Classes for elements (text) so that I can provide methods to flip, rotate, move, etc.
 # TODO: Convert data structure from tuple to dict for more flexibility.
 # TODO: Add bottom layer coil.  Will need to mirror/flip numerically myself.
 # TODO: Add via to bottom layer
@@ -33,18 +36,278 @@ import os
 # Video link to non-plated through holes:
 # URL: https://youtu.be/5Be7XOMmPQE?t=1653
 # TODO: Add optional center hole: radius
-# TODO: Use 'tstamp' UUID to locate elements & replace?
-3 URL: https://dev-docs.kicad.org/en/file-formats/sexpr-intro/#_text_effects:~:text=the%20key%20attribute.-,Universally%20Unique%20Identifier,-The%20uuid%20token
 # TODO: Inject comments as "gr_text" elements on layer "User.Comments"
 #       Can we create a special layer for this?
-# TODO: Create items as a group.  Looks simple if have UUID's.
-# UUID's:
-# >> import uuid
-# >> id = uuid.uuid4()
+# TODO: Create items as a group.  Uses UUID's to group.
 # TODO: Estimate coil trace resistance
 # TODO: Output turn count per coil
-# TODO: Estimate coil inductance?  
-# TODO: Output code for FEMM model generation.  
+# TODO: Estimate coil inductance?
+# TODO: Output code for FEMM model generation.
+
+
+class Point:
+    def __init__(self, x: float = 0.0, y: float = 0.0):
+        self._x = x
+        self._y = y
+
+    @property
+    def x(self) -> float:
+        """
+        Returns x coordinate.
+        """
+        return self._x
+
+    @property
+    def y(self) -> float:
+        """
+        Returns y coordinate.
+        """
+        return self._y
+
+    def __repr__(self):
+
+        return f"Point(x={self.x},y={self.y})"
+
+    def copy(self):
+        """
+        Returns a deep copy of the point.
+        """
+
+        return copy.deepcopy(self)
+
+    def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Translates the Point by the given distances.
+        """
+        self._x += x
+        self._y += y
+
+    def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Rotates the point about the given x,y coordinates by the given angle in radians.
+        """
+
+        # Translate to origin
+        self.Translate(-x, -y)
+
+        # Rotate
+        v = np.array([self._x, self._y])
+        R = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+        v = R.dot(v)
+
+        self._x = v[0]
+        self._y = v[1]
+
+        # Translate back
+        self.Translate(x, y)
+
+    def ToKiCad(self) -> str:
+        """
+        Returns string representation of Point in KiCAD format.
+        """
+
+        return f"{self._x:0.6f} {self._y:0.6f}"
+
+    def ToNumpy(self) -> Tuple:
+        """
+        Returns Numpy arrays for X & Y coordinates.
+        """
+
+        return np.array(self._x), np.array(self._y)
+
+
+class Track:
+    def __init__(self, net: int = 1):
+        """
+        Creates a Track base class in the given schematic net.
+
+        Assigns UUID to the object as the 'id' property.
+        """
+        self._net = net
+        self._id = uuid.uuid4()
+
+    @property
+    def net(self) -> int:
+        """
+        Returns the net ID for the Track.
+        """
+        return self._net
+
+    @net.setter
+    def net(self, value: int = 1) -> None:
+        """
+        Sets the net ID for the Track.
+        """
+        self._net = int(value)
+
+    @property
+    def id(self) -> uuid:
+        """
+        Returns the UUID of the Track.
+        """
+        return self._id
+
+    def ToKiCad(self) -> str:
+        """
+        Converts Track to KiCAD string.
+        """
+
+        return f"(net {self.net}) (tstamp {str(self.id)})"
+
+
+class Segment(Track):
+    def __init__(
+        self,
+        start: Point,
+        end: Point,
+        width: float = 0.1,
+        layer: str = "F.Cu",
+        net: int = 1,
+    ):
+        """
+        Creates a linear segment Track object.
+        """
+
+        super().__init__(net)
+
+        self._start = start
+        self._end = end
+        self._width = width
+        self._layer = layer
+
+    def __repr__(self):
+        return self.ToKiCad()
+
+    def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Translates the Segment Track by the given distances.
+        """
+        self._start.Translate(x, y)
+        self._end.Translate(x, y)
+
+    def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Rotates the Segment about the given x,y coordinates by the given angle in radians.
+        """
+
+        self._start.Rotate(angle, x, y)
+        self._end.Rotate(angle, x, y)
+
+    def ToKiCad(self) -> str:
+        """
+        Converts Segment to KiCAD string.
+        """
+
+        s = (
+            f"  (segment "
+            f"(start {self._start.ToKiCad()}) "
+            f"(end {self._end.ToKiCad()}) "
+            f"(width {self._width}) "
+            f'(layer "{self._layer}") '
+            f"{super().ToKiCad()}"
+            f")"
+        )
+        return s
+
+    def ToNumpy(self) -> Tuple:
+        """
+        Returns Numpy arrays for Segment X & Y coordinates.
+
+        Suitable for plotting.
+        """
+
+        x1, y1 = self._start.ToNumpy()
+        x2, y2 = self._end.ToNumpy()
+
+        return np.append(x1, x2), np.append(y1, y2)
+
+
+class Arc(Track):
+    def __init__(
+        self,
+        center: Point,
+        radius: float = 1.0,
+        start: float = 0.0,
+        end: float = np.pi,
+        width: float = 0.1,
+        layer: str = "F.Cu",
+        net: int = 1,
+    ):
+        """
+        Creates an Arc Track object.
+        """
+
+        super().__init__(net)
+
+        self._center = center
+        self._radius = radius
+        self._start = start
+        self._end = end
+        self._width = width
+        self._layer = layer
+
+    def __repr__(self):
+        return self.ToKiCad()
+
+    def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Translates the Arc Track by the given distances.
+        """
+        self._center.Translate(x, y)
+
+    def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Rotates the Arc about the given x,y coordinates by the given angle in radians.
+        """
+
+        self._center.Rotate(angle, x, y)
+        self._start += angle
+        self._end += angle
+
+    def ToKiCad(self) -> str:
+        """
+        Converts Arc to KiCAD string.
+        """
+
+        pt_rad = Point(self._radius, 0)
+
+        pts = [pt_rad.copy(), pt_rad.copy(), pt_rad.copy()]  # start  # mid  # end
+
+        angles = [self._start, np.mean([self._start, self._end]), self._end]
+
+        for i, pt in enumerate(pts):
+            pt.Rotate(angles[i])
+            pt.Translate(self._center.x, self._center.y)
+
+        s = (
+            f"  (arc "
+            f"(start {pts[0].ToKiCad()}) "
+            f"(mid {pts[1].ToKiCad()}) "
+            f"(end {pts[2].ToKiCad()}) "
+            f"(width {self._width}) "
+            f'(layer "{self._layer}") '
+            f"{super().ToKiCad()}"
+            f")"
+        )
+        return s
+
+    def ToNumpy(self, n: int = 100) -> Tuple:
+        """
+        Returns Numpy arrays for Arc X & Y coordinates.
+
+        n: Number of points to represent arc.  Default = 100.
+
+        Suitable for plotting.
+        """
+
+        d_theta = np.diff(self._end - self._start) / n
+
+        theta = np.arange(self._start, self._end, d_theta)
+        x = self._radius * np.cos(theta)
+        y = self._radius * np.sin(theta)
+
+        return x, y
+
 
 class Coil3Ph:
     """
@@ -333,18 +596,27 @@ class Coil3Ph:
 
 #%%
 if __name__ == "__main__":
-    fn = "coil.config"
 
+    seg = Segment(Point(0, 0), Point(10, 10), width=0.25)
+    seg.Translate(2, 3)
+    print(seg.ToKiCad())
+
+    arc = Arc(Point(0, 0), radius=5, start=0, end=np.pi / 2, width=0.123)
+    arc.Rotate(np.pi / 2)
+    print(arc.ToKiCad())
+
+    # fn = "coil.config"
     # coil = Coil3Ph(cfgfile=fn)
-    coil = Coil3Ph()
-    coil._replication = 1
-    coil._od = 20
-    coil._id = 4
-    coil._width = 0.25
-    coil._spacing = 0.25
-    coil._layers = ["F.Cu"]
-    coil._center = np.array([120, 120])
 
-    coil.GenerateGeo()
-    # coil.Plot()
-    coil.ToKiCad(to_stdout=True)
+    # coil = Coil3Ph()
+    # coil._replication = 1
+    # coil._od = 20
+    # coil._id = 4
+    # coil._width = 0.25
+    # coil._spacing = 0.25
+    # coil._layers = ["F.Cu"]
+    # coil._center = np.array([120, 120])
+
+    # coil.GenerateGeo()
+    # # coil.Plot()
+    # coil.ToKiCad(to_stdout=True)
