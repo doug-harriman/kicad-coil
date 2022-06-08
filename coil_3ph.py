@@ -23,7 +23,6 @@ import copy
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
 # TODO: Classes for elements (text) so that I can provide methods to flip, rotate, move, etc.
-# TODO: Convert data structure from tuple to dict for more flexibility.
 # TODO: Add bottom layer coil.  Will need to mirror/flip numerically myself.
 # TODO: Add via to bottom layer
 # TODO: Add B & C phases, rotated.
@@ -334,7 +333,7 @@ class Coil3Ph:
         self._od = 50
         self._id = 10
         self._replication = 1
-        self._center = np.array([0, 0])
+        self._center = Point()
 
         self._geo = None
 
@@ -477,61 +476,69 @@ class Coil3Ph:
         self._geo = []
 
         # First segment is the entry segment from the connection trace.
-        line = [rad_out + self._width + self._spacing, 0, r[0], 0]  # Inside radius
-        self._geo.append(("line", line))
+        seg = Segment(
+            Point(rad_out + self._width + self._spacing, 0),
+            Point(r[0], 0),
+            width=self._width,
+            layer=self._layers[0],
+            net=self._net_phA,
+        )
+        self._geo.append(seg)
 
         i = 0
         while i + 1 < len(r):
 
             # Arc
-            arc = [
-                r[i] * np.cos(angles[i]),
-                r[i] * np.sin(angles[i]),
-                r[i] * np.cos(angles[i : i + 2].mean()),
-                r[i] * np.sin(angles[i : i + 2].mean()),
-                r[i] * np.cos(angles[i + 1]),
-                r[i] * np.sin(angles[i + 1]),
-            ]
-            self._geo.append(("arc", arc))
+            arc = Arc(
+                center=Point(0, 0),
+                radius=r[i],
+                start=angles[i],
+                end=angles[i + 1],
+                width=self._width,
+                layer=self._layers[0],
+                net=self._net_phA,
+            )
+            self._geo.append(arc)
 
             # Line
-            line = [
-                r[i] * np.cos(angles[i + 1]),
-                r[i] * np.sin(angles[i + 1]),
-                r[i + 1] * np.cos(angles[i + 1]),
-                r[i + 1] * np.sin(angles[i + 1]),
-            ]
-            self._geo.append(("line", line))
+            seg = Segment(
+                Point(r[i] * np.cos(angles[i + 1]), r[i] * np.sin(angles[i + 1])),
+                Point(
+                    r[i + 1] * np.cos(angles[i + 1]), r[i + 1] * np.sin(angles[i + 1])
+                ),
+                width=self._width,
+                layer=self._layers[0],
+                net=self._net_phA,
+            )
+            self._geo.append(seg)
 
             i += 1
 
         # Line to center of coil for via
         angle_1 = angles[i]
         angle_2 = angles[i : i + 2].mean()
-        arc = [
-            r[i] * np.cos(angle_1),
-            r[i] * np.sin(angle_1),
-            r[i] * np.cos(np.mean([angle_1, angle_2])),
-            r[i] * np.sin(np.mean([angle_1, angle_2])),
-            r[i] * np.cos(angle_2),
-            r[i] * np.sin(angle_2),
-        ]
-        self._geo.append(("arc", arc))
+        arc = Arc(
+            center=Point(0, 0),
+            radius=r[i],
+            start=angle_1,
+            end=angle_2,
+            width=self._width,
+            layer=self._layers[0],
+            net=self._net_phA,
+        )
+        self._geo.append(arc)
 
         # Reprocess geometry adding center offsets.
-        self._geo = self.Translate(self._geo, self._center)
+        self.Translate(self._center)
 
-    def Translate(self, geo, delta):
+    def Translate(self, delta=Point):
         """
         Translates geometry by given offset [x,y].
         """
 
         # Process geometry list
-        for seg in geo:
-            seg[1][0::2] += delta[0]
-            seg[1][1::2] += delta[1]
-
-        return geo
+        for g in self._geo:
+            g.Translate(delta.x, delta.y)
 
     def ToKiCad(self, filename: str = None, to_stdout: bool = False):
         """
@@ -544,43 +551,9 @@ class Coil3Ph:
         eol = os.linesep
         s = ""
 
-        # TODO: Update these when ready to handle them
-        layer = self._layers[0]
-        net = self._net_phA
-
         # Process all geometry data
-        for seg in self._geo:
-            if seg[0] == "line":
-                segment = (
-                    "  (segment "
-                    f"(start {seg[1][0]:0.5f} {seg[1][1]:0.5f}) "
-                    f"(end {seg[1][2]:0.5f} {seg[1][3]:0.5f}) "
-                    f"(width {self._width}) "
-                    f'(layer "{layer}") '
-                    f"(net {net}) )"
-                )
-
-                s += segment + eol
-
-            elif seg[0] == "arc":
-                # Note: There is an error in the KiCAD documentation for the arc.
-                #       The width is a single value, not X & Y widths.
-                # URL: https://dev-docs.kicad.org/en/file-formats/sexpr-pcb/#_header_section:~:text=the%20line%20object.-,Track%20Arc,-The%20arc%20token
-                arc = (
-                    "  (arc "
-                    f"(start {seg[1][0]:0.5f} {seg[1][1]:0.5f}) "
-                    f"(mid {seg[1][2]:0.5f} {seg[1][3]:0.5f}) "
-                    f"(end {seg[1][4]:0.5f} {seg[1][5]:0.5f}) "
-                    f"(width {self._width}) "
-                    f'(layer "{layer}") '
-                    f"(net {net}) )"
-                )
-
-                s += arc + eol
-
-            else:
-                raise ValueError(f"Unsupported geometry type: {seg[0]}")
-
+        for g in self._geo:
+            s += g.ToKiCad() + eol
         s += eol
 
         # Output options
@@ -597,26 +570,28 @@ class Coil3Ph:
 #%%
 if __name__ == "__main__":
 
-    seg = Segment(Point(0, 0), Point(10, 10), width=0.25)
-    seg.Translate(2, 3)
-    print(seg.ToKiCad())
+    if False:  # Base geometry elements
+        seg = Segment(Point(0, 0), Point(10, 10), width=0.25)
+        seg.Translate(2, 3)
+        print(seg.ToKiCad())
 
-    arc = Arc(Point(0, 0), radius=5, start=0, end=np.pi / 2, width=0.123)
-    arc.Rotate(np.pi / 2)
-    print(arc.ToKiCad())
+        arc = Arc(Point(0, 0), radius=5, start=0, end=np.pi / 2, width=0.123)
+        arc.Rotate(np.pi / 2)
+        print(arc.ToKiCad())
 
     # fn = "coil.config"
     # coil = Coil3Ph(cfgfile=fn)
 
-    # coil = Coil3Ph()
-    # coil._replication = 1
-    # coil._od = 20
-    # coil._id = 4
-    # coil._width = 0.25
-    # coil._spacing = 0.25
-    # coil._layers = ["F.Cu"]
-    # coil._center = np.array([120, 120])
+    if True:  # 3phase coil
+        coil = Coil3Ph()
+        coil._replication = 1
+        coil._od = 20
+        coil._id = 4
+        coil._width = 0.25
+        coil._spacing = 0.25
+        coil._layers = ["F.Cu"]
+        coil._center = Point(120, 120)
 
-    # coil.GenerateGeo()
-    # # coil.Plot()
-    # coil.ToKiCad(to_stdout=True)
+        coil.GenerateGeo()
+        # coil.Plot()
+        coil.ToKiCad(to_stdout=True)
