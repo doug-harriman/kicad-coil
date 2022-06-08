@@ -14,6 +14,7 @@ from pint import UnitRegistry
 import os
 import uuid
 import copy
+import warnings
 
 # KiCAD Python
 # pip install kicad_python
@@ -22,7 +23,8 @@ import copy
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# TODO: Classes for elements (text) so that I can provide methods to flip, rotate, move, etc.
+# TODO: Abstract out single wedge coil generation from 3ph generation.
+# TODO: Deep copy of groups.
 # TODO: Add bottom layer coil.  Will need to mirror/flip numerically myself.
 # TODO: Add via to bottom layer
 # TODO: Add B & C phases, rotated.
@@ -37,10 +39,13 @@ import copy
 # TODO: Add optional center hole: radius
 # TODO: Inject comments as "gr_text" elements on layer "User.Comments"
 #       Can we create a special layer for this?
-# TODO: Create items as a group.  Uses UUID's to group.
-# TODO: Estimate coil trace resistance
+# TODO: Coil needs to capture number of turns in GenerateGeo().
+# TODO: Estimate coil trace resistance.
+#       * TraceLen implemented.
+#       * Need to capture Copper thickness/weight
 # TODO: Output turn count per coil
 # TODO: Estimate coil inductance?
+# TODO: Get Plotly plotting working again.
 # TODO: Output code for FEMM model generation.
 
 
@@ -56,6 +61,18 @@ class Point:
         """
         return self._x
 
+    @x.setter
+    def x(self, value: float = 0.0):
+        """
+        Set X coordinate.
+
+        Args:
+            value (float, optional): X coordinate. Defaults to 0.0.
+        """
+
+        value = float(value)
+        self._x = value
+
     @property
     def y(self) -> float:
         """
@@ -63,16 +80,21 @@ class Point:
         """
         return self._y
 
+    @y.setter
+    def y(self, value: float = 0.0):
+        """
+        Set Y coordinate.
+
+        Args:
+            value (float, optional): Y coordinate. Defaults to 0.0.
+        """
+
+        value = float(value)
+        self._y = value
+
     def __repr__(self):
 
         return f"Point(x={self.x},y={self.y})"
-
-    def copy(self):
-        """
-        Returns a deep copy of the point.
-        """
-
-        return copy.deepcopy(self)
 
     def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
         """
@@ -125,6 +147,32 @@ class Track:
         self._net = net
         self._id = uuid.uuid4()
 
+    def __deepcopy__(self, memo):
+        """
+        Deep copy of Track class with new UUIO.
+        """
+
+        # Per:
+        # https://stackoverflow.com/questions/57181829/deepcopy-override-clarification
+
+        from copy import deepcopy
+
+        cls = self.__class__  # Extract the class of the object
+        # Create a new instance of the object based on extracted class
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+
+            # Copy over attributes by copying directly or in case of complex
+            # objects like lists for exaample calling the `__deepcopy()__`
+            # method defined by them. Thus recursively copying the whole tree
+            # of objects.
+            setattr(result, k, deepcopy(v, memo))
+
+        result._id = uuid.uuid4()
+
+        return result
+
     @property
     def net(self) -> int:
         """
@@ -157,8 +205,8 @@ class Track:
 class Segment(Track):
     def __init__(
         self,
-        start: Point,
-        end: Point,
+        start: Point = Point(),
+        end: Point = Point(0, 1),
         width: float = 0.1,
         layer: str = "F.Cu",
         net: int = 1,
@@ -176,6 +224,29 @@ class Segment(Track):
 
     def __repr__(self):
         return self.ToKiCad()
+
+    @property
+    def layer(self) -> str:
+        """
+        Returns layer for Segment.
+
+        Returns:
+            str: Layer
+        """
+
+        return self._layer
+
+    @layer.setter
+    def layer(self, value: str = "F.Cu"):
+        """
+        Sets layer for Segment.
+
+        Args:
+            value (str, optional): Layer name. Defaults to 'F.Cu'.
+        """
+
+        value = str(value)
+        self._layer = value
 
     def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
         """
@@ -220,11 +291,23 @@ class Segment(Track):
 
         return np.append(x1, x2), np.append(y1, y2)
 
+    def TraceLen(self) -> float:
+        """
+        Calculates Segment trace length.
+
+        Returns:
+            float: Trace length.
+        """
+
+        return np.sqrt(
+            (self._start.x - self._end.x) ** 2 + (self._start.y - self._end.y) ** 2
+        )
+
 
 class Arc(Track):
     def __init__(
         self,
-        center: Point,
+        center: Point = Point(),
         radius: float = 1.0,
         start: float = 0.0,
         end: float = np.pi,
@@ -248,6 +331,29 @@ class Arc(Track):
     def __repr__(self):
         return self.ToKiCad()
 
+    @property
+    def layer(self) -> str:
+        """
+        Returns layer for Arc.
+
+        Returns:
+            str: Layer
+        """
+
+        return self._layer
+
+    @layer.setter
+    def layer(self, value: str = "F.Cu"):
+        """
+        Sets layer for Arc.
+
+        Args:
+            value (str, optional): Layer name. Defaults to 'F.Cu'.
+        """
+
+        value = str(value)
+        self._layer = value
+
     def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
         """
         Translates the Arc Track by the given distances.
@@ -270,7 +376,8 @@ class Arc(Track):
 
         pt_rad = Point(self._radius, 0)
 
-        pts = [pt_rad.copy(), pt_rad.copy(), pt_rad.copy()]  # start  # mid  # end
+        # start  # mid  # end
+        pts = [copy.copy(pt_rad), copy.copy(pt_rad), copy.copy(pt_rad)]
 
         angles = [self._start, np.mean([self._start, self._end]), self._end]
 
@@ -306,6 +413,141 @@ class Arc(Track):
         y = self._radius * np.sin(theta)
 
         return x, y
+
+    def TraceLen(self) -> float:
+        """
+        Calculates Arc trace length.
+
+        Returns:
+            float: Trace length.
+        """
+
+        return self._radius * np.abs(self._start - self._end)
+
+
+class Group:
+    def __init__(self, members: list = None, name: str = ""):
+        """
+        Creates a KiCAD group from the given list of member PCB elements.
+
+        Assigns UUID to the object as the 'id' property.
+        """
+        self._id = uuid.uuid4()
+        self._name = name
+        self._members = []
+
+        for member in members:
+            try:
+                self.AddMember(member)
+            except TypeError:
+                warnings.warn(f'Skipping member with no "id" attribute: {member}')
+
+    def __repr__(self):
+        return self.ToKiCad()
+
+    @property
+    def id(self) -> uuid:
+        """
+        Returns the UUID of the Track.
+        """
+        return self._id
+
+    @property
+    def name(self) -> str:
+        """
+        Returns the name of the group.
+        """
+        return self._name
+
+    @name.setter
+    def name(self, value: str = ""):
+        """
+        Sets name of group.
+
+        Args:
+            value (str, optional): Group name. Defaults to "".
+
+        Raises:
+            TypeError: Invalid name type.
+
+        Returns:
+            None
+        """
+
+        if not isinstance(value, str):
+            raise TypeError('Given name value is not of type "str".')
+
+        self._name = value
+
+    @property
+    def members(self) -> list:
+        """
+        Returns the child element list.
+        """
+        return self._members
+
+    def AddMember(self, member):
+        """
+        Adds object to list of group members.
+
+        Args:
+            member (_type_): Member object.
+
+        Raises:
+            FileExistsError: _description_
+            FileExistsError: _description_
+            ValueError: _description_
+
+        Returns:
+            None
+        """
+
+        # Verify child has the required method.
+        if hasattr(member, "id"):
+            self._members.append(member)
+        else:
+            raise TypeError(f'Member has no "id" attribute: {member}')
+
+    def ToKiCad(self) -> str:
+        """
+        Converts Arc to KiCAD string.
+
+        Returns:
+            str: KiCAD PCB string representation of group.
+        """
+
+        indent = "  "
+        eol = os.linesep
+        s = ""
+
+        # Header
+        s += indent + f'(group "{self._name}" (id {self._id})' + eol
+        s += 2 * indent + "(members" + eol
+
+        for m in self._members:
+            s += 3 * indent + f"{m.id}" + eol
+
+        # Footer
+        s += 2 * indent + ")" + eol
+        s += indent + ")" + eol
+
+        return s
+
+    def TraceLen(self) -> float:
+        """
+        Calculates total trace length for all Track elements in group.
+        WARNING: Assumes that all elements are connected in series.
+
+        Returns:
+            float: Trace length.
+        """
+
+        l = 0
+        for m in self.members:
+            if isinstance(m, Track):
+                l += m.TraceLen()
+
+        return l
 
 
 class Coil3Ph:
@@ -555,6 +797,10 @@ class Coil3Ph:
         for g in self._geo:
             s += g.ToKiCad() + eol
         s += eol
+
+        # Add that geo to a group.
+        g = Group(members=self._geo, name="PhA")
+        s += g.ToKiCad()
 
         # Output options
         if filename is not None:
