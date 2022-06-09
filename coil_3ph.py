@@ -49,6 +49,8 @@ import warnings
 #       * Paren parsing.
 #       * Delete elements by UUID or group name.
 #       * Add elements to end.
+# TODO: Completeness: Property getter/setters for Segment and Arc
+# TODO: Completeness: Property getter/setters for SectorCoil
 
 
 class Point:
@@ -250,6 +252,35 @@ class Segment(Track):
         value = str(value)
         self._layer = value
 
+    @property
+    def width(self) -> float:
+        """
+        Segment track width property getter.
+
+        Returns:
+            float: Segment track width.
+        """
+
+        return self._width
+
+    @width.setter
+    def width(self, value: float = 0.2) -> None:
+        """
+        Segment track width setter.
+
+        Args:
+            value (float, optional): Track width. Defaults to 0.2.
+        """
+
+        width_orig = value
+        width = float(value)
+        if len(width) != 1:
+            raise ValueError(f"Track width must be scalar: {width_orig}")
+        if width <= 0.0:
+            raise ValueError(f"Track width positive: {width_orig}")
+
+        self._width = width
+
     def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
         """
         Translates the Segment Track by the given distances.
@@ -357,6 +388,35 @@ class Arc(Track):
 
         value = str(value)
         self._layer = value
+
+    @property
+    def width(self) -> float:
+        """
+        Arc track width property getter.
+
+        Returns:
+            float: Arc track width.
+        """
+
+        return self._width
+
+    @width.setter
+    def width(self, value: float = 0.2) -> None:
+        """
+        Arc track width setter.
+
+        Args:
+            value (float, optional): Track width. Defaults to 0.2.
+        """
+
+        width_orig = value
+        width = float(value)
+        if len(width) != 1:
+            raise ValueError(f"Track width must be scalar: {width_orig}")
+        if width <= 0.0:
+            raise ValueError(f"Track width positive: {width_orig}")
+
+        self._width = width
 
     def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
         """
@@ -622,7 +682,7 @@ class SectorCoil(Group):
         self._center = Point()
         self._angle = np.pi / 2
 
-        self._layers = ["F.Cu"]  # , "B.Cu"]
+        self._layer = "F.Cu"
         self._width = 0.2
         self._spacing = 0.2
         self._net = 1
@@ -636,6 +696,58 @@ class SectorCoil(Group):
         Net ID property getter.
         """
         return self._net
+
+    @property
+    def layer(self) -> str:
+        """
+        Returns layer for SectorCoil.
+
+        Returns:
+            str: Layer
+        """
+
+        return self._layer
+
+    @layer.setter
+    def layer(self, value: str = "F.Cu"):
+        """
+        Sets layer for SectorCoil.
+
+        Args:
+            value (str, optional): Layer name. Defaults to 'F.Cu'.
+        """
+
+        value = str(value)
+        self._layer = value
+
+    @property
+    def width(self) -> float:
+        """
+        Sector track width property getter.
+
+        Returns:
+            float: Sector track width.
+        """
+
+        return self._width
+
+    @width.setter
+    def width(self, value: float = 0.2) -> None:
+        """
+        Sector track width setter.
+
+        Args:
+            value (float, optional): Track width. Defaults to 0.2.
+        """
+
+        width_orig = value
+        width = float(value)
+        if len(width) != 1:
+            raise ValueError(f"Track width must be scalar: {width_orig}")
+        if width <= 0.0:
+            raise ValueError(f"Track width positive: {width_orig}")
+
+        self._width = width
 
     @net.setter
     def net(self, value: int = 1) -> None:
@@ -719,7 +831,7 @@ class SectorCoil(Group):
             Point(rad_out + self._width + self._spacing, 0),
             Point(r[0], 0),
             width=self._width,
-            layer=self._layers[0],
+            layer=self.layer,
             net=self.net,
         )
         self.AddMember(seg)
@@ -734,7 +846,7 @@ class SectorCoil(Group):
                 start=angles[i],
                 end=angles[i + 1],
                 width=self._width,
-                layer=self._layers[0],
+                layer=self.layer,
                 net=self.net,
             )
             self.AddMember(arc)
@@ -746,7 +858,7 @@ class SectorCoil(Group):
                     r[i + 1] * np.cos(angles[i + 1]), r[i + 1] * np.sin(angles[i + 1])
                 ),
                 width=self._width,
-                layer=self._layers[0],
+                layer=self.layer,
                 net=self.net,
             )
             self.AddMember(seg)
@@ -762,7 +874,7 @@ class SectorCoil(Group):
             start=angle_1,
             end=angle_2,
             width=self._width,
-            layer=self._layers[0],
+            layer=self.layer,
             net=self.net,
         )
         self.AddMember(arc)
