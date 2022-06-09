@@ -23,9 +23,7 @@ import warnings
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# TODO: Abstract out single wedge coil generation from 3ph generation.
-# TODO: Deep copy of groups.
-# TODO: Add bottom layer coil.  Will need to mirror/flip numerically myself.
+# TODO: Add bottom layer coil.  Will need to mirror/flip numerically myself to properly align.
 # TODO: Add via to bottom layer
 # TODO: Add B & C phases, rotated.
 # TODO: Add text label "gr_text" to each phase
@@ -47,6 +45,10 @@ import warnings
 # TODO: Estimate coil inductance?
 # TODO: Get Plotly plotting working again.
 # TODO: Output code for FEMM model generation.
+# TODO: Ability to read/write PCB file directly.
+#       * Paren parsing.
+#       * Delete elements by UUID or group name.
+#       * Add elements to end.
 
 
 class Point:
@@ -263,19 +265,21 @@ class Segment(Track):
         self._start.Rotate(angle, x, y)
         self._end.Rotate(angle, x, y)
 
-    def ToKiCad(self) -> str:
+    def ToKiCad(self, indent: str = "") -> str:
         """
         Converts Segment to KiCAD string.
         """
 
         s = (
-            f"  (segment "
+            f"{indent}"
+            f"(segment "
             f"(start {self._start.ToKiCad()}) "
             f"(end {self._end.ToKiCad()}) "
             f"(width {self._width}) "
             f'(layer "{self._layer}") '
             f"{super().ToKiCad()}"
             f")"
+            f"{os.linesep}"
         )
         return s
 
@@ -369,7 +373,7 @@ class Arc(Track):
         self._start += angle
         self._end += angle
 
-    def ToKiCad(self) -> str:
+    def ToKiCad(self, indent: str = "") -> str:
         """
         Converts Arc to KiCAD string.
         """
@@ -386,7 +390,8 @@ class Arc(Track):
             pt.Translate(self._center.x, self._center.y)
 
         s = (
-            f"  (arc "
+            f"{indent}"
+            f"(arc "
             f"(start {pts[0].ToKiCad()}) "
             f"(mid {pts[1].ToKiCad()}) "
             f"(end {pts[2].ToKiCad()}) "
@@ -394,6 +399,7 @@ class Arc(Track):
             f'(layer "{self._layer}") '
             f"{super().ToKiCad()}"
             f")"
+            f"{os.linesep}"
         )
         return s
 
@@ -436,14 +442,41 @@ class Group:
         self._name = name
         self._members = []
 
-        for member in members:
-            try:
-                self.AddMember(member)
-            except TypeError:
-                warnings.warn(f'Skipping member with no "id" attribute: {member}')
+        if len(self._members) > 0:
+            for member in members:
+                try:
+                    self.AddMember(member)
+                except TypeError:
+                    warnings.warn(f'Skipping member with no "id" attribute: {member}')
 
     def __repr__(self):
         return self.ToKiCad()
+
+    def __deepcopy__(self, memo):
+        """
+        Deep copy of Group class with new UUIO.
+        """
+
+        # Per:
+        # https://stackoverflow.com/questions/57181829/deepcopy-override-clarification
+
+        from copy import deepcopy
+
+        cls = self.__class__  # Extract the class of the object
+        # Create a new instance of the object based on extracted class
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+
+            # Copy over attributes by copying directly or in case of complex
+            # objects like lists for exaample calling the `__deepcopy()__`
+            # method defined by them. Thus recursively copying the whole tree
+            # of objects.
+            setattr(result, k, deepcopy(v, memo))
+
+        result._id = uuid.uuid4()
+
+        return result
 
     @property
     def id(self) -> uuid:
@@ -508,9 +541,27 @@ class Group:
         else:
             raise TypeError(f'Member has no "id" attribute: {member}')
 
-    def ToKiCad(self) -> str:
+    def Translate(self, x: float = 0.0, y: float = 0.0):
         """
-        Converts Arc to KiCAD string.
+        Translates geometry by given offset [x,y].
+        """
+
+        # Process member list
+        for g in self._members:
+            g.Translate(x, y)
+
+    def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Rotates the Group members about the given x,y coordinates by the given angle in radians.
+        """
+
+        # Process member list
+        for g in self._members:
+            g.Rotate(angle, x, y)
+
+    def ToKiCad(self, indent: str = "") -> str:
+        """
+        Converts Group list and all children to KiCAD string.
 
         Returns:
             str: KiCAD PCB string representation of group.
@@ -520,8 +571,12 @@ class Group:
         eol = os.linesep
         s = ""
 
-        # Header
-        s += indent + f'(group "{self._name}" (id {self._id})' + eol
+        # Generate S-expressions for children objects first.
+        for m in self._members:
+            s += m.ToKiCad(indent=indent)
+
+        # Group Header
+        s += indent + f'(group "{self._name}" (id {str(self.id)})' + eol
         s += 2 * indent + "(members" + eol
 
         for m in self._members:
@@ -550,6 +605,172 @@ class Group:
         return l
 
 
+class SectorCoil(Group):
+    """
+    Class for creating circular sector coil geometry for KiCAD.
+    """
+
+    def __init__(self):
+        """
+        SectorCoil constructor.
+        """
+
+        super().__init__()
+
+        self._dia_outside = 20
+        self._dia_inside = 5
+        self._center = Point()
+        self._angle = np.pi / 2
+
+        self._layers = ["F.Cu"]  # , "B.Cu"]
+        self._width = 0.2
+        self._spacing = 0.2
+        self._net = 1
+
+        # Initial generation of geometry.
+        self.Generate()
+
+    @property
+    def net(self) -> int:
+        """
+        Net ID property getter.
+        """
+        return self._net
+
+    @net.setter
+    def net(self, value: int = 1) -> None:
+        """
+        Net property setter.
+
+        Args:
+            value (int, optional): ID of net. Defaults to 1.
+        """
+
+        net = int(value)
+        if net < 1:
+            raise ValueError(f"Net ID < 1: {value}")
+
+        self._net = net
+
+        # For regeneration of geometry
+        self.Generate()
+
+    def Generate(self):
+        """
+        Generates coil geometry segments.
+
+        All segments define the midpoints of the track.
+
+        """
+
+        def angle_change(radius):
+            """
+            Calculates the change in angle based on current OD
+            and track geometry.
+            """
+
+            # Effective arc length based on track geometry
+            len_arc = self._spacing + self._width
+            len_arc *= np.pi / 2
+
+            # Angle to get that arc at the current radius
+            theta = len_arc / radius
+
+            return theta
+
+        # OD is started outside of coil.
+        # First loop will have outside edge on the OD
+        rad_out = self._dia_outside / 2 + self._width / 2
+        rad_pitch = self._width + self._spacing
+
+        radii = np.arange(rad_out, 0, -rad_pitch)
+        radii = radii[np.where(radii > self._dia_inside / 2)]
+
+        angles = np.array([[0, self._angle - angle_change(radii[0])]])
+        for i, radius in enumerate(radii):
+            if i == 0:
+                continue
+
+            delta = angle_change(radius)
+            angles_new = angles[i - 1, :] + np.array([1, -1]) * delta
+
+            angles = np.vstack((angles, angles_new))
+
+        # At some the radius gets too small, and lines may start crossing.
+        # Keep the sector angle > 0
+        da = np.diff(angles)
+        idx = np.where(da > 0)[0]
+
+        # Generate list of angles to process through
+        radii = radii[idx]
+        angles = angles[idx, :]
+        angles = angles.flatten()
+
+        # Generate list of radii to process through
+        r = np.zeros((len(radii) * 2,))
+        r[1::2] = radii
+        r[::2] = np.flip(radii)
+        r = r[: int(len(r) / 2)]
+
+        self._turns = 0
+
+        # First segment is the entry segment from the connection trace.
+        seg = Segment(
+            Point(rad_out + self._width + self._spacing, 0),
+            Point(r[0], 0),
+            width=self._width,
+            layer=self._layers[0],
+            net=self.net,
+        )
+        self.AddMember(seg)
+
+        i = 0
+        while i + 1 < len(r):
+
+            # Arc
+            arc = Arc(
+                center=Point(0, 0),
+                radius=r[i],
+                start=angles[i],
+                end=angles[i + 1],
+                width=self._width,
+                layer=self._layers[0],
+                net=self.net,
+            )
+            self.AddMember(arc)
+
+            # Line
+            seg = Segment(
+                Point(r[i] * np.cos(angles[i + 1]), r[i] * np.sin(angles[i + 1])),
+                Point(
+                    r[i + 1] * np.cos(angles[i + 1]), r[i + 1] * np.sin(angles[i + 1])
+                ),
+                width=self._width,
+                layer=self._layers[0],
+                net=self.net,
+            )
+            self.AddMember(seg)
+
+            i += 1
+
+        # Line to center of coil for via
+        angle_1 = angles[i]
+        angle_2 = angles[i : i + 2].mean()
+        arc = Arc(
+            center=Point(0, 0),
+            radius=r[i],
+            start=angle_1,
+            end=angle_2,
+            width=self._width,
+            layer=self._layers[0],
+            net=self.net,
+        )
+        self.AddMember(arc)
+
+        # Reprocess geometry adding center offsets.
+        self.Translate(self._center.x, self._center.y)
+
+
 class Coil3Ph:
     """
     3-phase coil geometry generator for KiCad.
@@ -575,7 +796,6 @@ class Coil3Ph:
         self._od = 50
         self._id = 10
         self._replication = 1
-        self._center = Point()
 
         self._geo = None
 
@@ -652,127 +872,6 @@ class Coil3Ph:
         )
         fig.show()
 
-    def GenerateGeo(self):
-        """
-        Generates coil geometry segments.
-
-        All segments define the midpoints of the track.
-
-        """
-
-        # Angle per phase section.
-        sections = 3 * self._replication
-        angle_section = 360 / sections  # degrees
-        angle_section *= np.pi / 180  # radians
-
-        def angle_change(radius):
-            """
-            Calculates the change in angle based on current OD
-            and track geometry.
-            """
-
-            # Effective arc length based on track geometry
-            len_arc = self._spacing + self._width
-            len_arc *= np.pi / 2
-
-            # Angle to get that arc at the current radius
-            theta = len_arc / radius
-
-            return theta
-
-        # OD is started outside of coil.
-        # First loop will have outside edge on the OD
-        rad_out = self._od / 2 + self._width / 2
-        rad_pitch = self._width + self._spacing
-
-        radii = np.arange(rad_out, 0, -rad_pitch)
-        radii = radii[np.where(radii > self._id / 2)]
-
-        angles = np.array([[0, angle_section - angle_change(radii[0])]])
-        for i, radius in enumerate(radii):
-            if i == 0:
-                continue
-
-            delta = angle_change(radius)
-            angles_new = angles[i - 1, :] + np.array([1, -1]) * delta
-
-            angles = np.vstack((angles, angles_new))
-
-        # At some the radius gets too small, and lines may start crossing.
-        # Keep the sector angle > 0
-        da = np.diff(angles)
-        idx = np.where(da > 0)[0]
-
-        # Generate list of angles to process through
-        radii = radii[idx]
-        angles = angles[idx, :]
-        angles = angles.flatten()
-
-        # Generate list of radii to process through
-        r = np.zeros((len(radii) * 2,))
-        r[1::2] = radii
-        r[::2] = np.flip(radii)
-        r = r[: int(len(r) / 2)]
-
-        self._turns = 0
-        self._geo = []
-
-        # First segment is the entry segment from the connection trace.
-        seg = Segment(
-            Point(rad_out + self._width + self._spacing, 0),
-            Point(r[0], 0),
-            width=self._width,
-            layer=self._layers[0],
-            net=self._net_phA,
-        )
-        self._geo.append(seg)
-
-        i = 0
-        while i + 1 < len(r):
-
-            # Arc
-            arc = Arc(
-                center=Point(0, 0),
-                radius=r[i],
-                start=angles[i],
-                end=angles[i + 1],
-                width=self._width,
-                layer=self._layers[0],
-                net=self._net_phA,
-            )
-            self._geo.append(arc)
-
-            # Line
-            seg = Segment(
-                Point(r[i] * np.cos(angles[i + 1]), r[i] * np.sin(angles[i + 1])),
-                Point(
-                    r[i + 1] * np.cos(angles[i + 1]), r[i + 1] * np.sin(angles[i + 1])
-                ),
-                width=self._width,
-                layer=self._layers[0],
-                net=self._net_phA,
-            )
-            self._geo.append(seg)
-
-            i += 1
-
-        # Line to center of coil for via
-        angle_1 = angles[i]
-        angle_2 = angles[i : i + 2].mean()
-        arc = Arc(
-            center=Point(0, 0),
-            radius=r[i],
-            start=angle_1,
-            end=angle_2,
-            width=self._width,
-            layer=self._layers[0],
-            net=self._net_phA,
-        )
-        self._geo.append(arc)
-
-        # Reprocess geometry adding center offsets.
-        self.Translate(self._center)
-
     def Translate(self, delta=Point):
         """
         Translates geometry by given offset [x,y].
@@ -825,10 +924,40 @@ if __name__ == "__main__":
         arc.Rotate(np.pi / 2)
         print(arc.ToKiCad())
 
+    if True:
+        g = Group(name="Quadrants")
+
+        c1 = SectorCoil()
+        c1.name = "SE"
+        c1.Generate()
+        # c.Translate(100, 80)
+        g.AddMember(c1)
+
+        angles = [(1, "NE"), (2, "NW"), (3, "SW")]
+        for angle in angles:
+            rot = angle[0] * -np.pi / 2
+
+            c = copy.deepcopy(c1)
+            c.name = angle[1]
+            c.net = angle[0] + 1
+            c.Rotate(rot)
+            g.AddMember(c)
+
+        # c2 = SectorCoil()
+        # c2.name = "NE"
+        # c2.Generate()
+        # c2.Rotate(-np.pi / 2)
+        # g.AddMember(c2)
+        g.Translate(120, 85)
+
+        s = g.ToKiCad()
+
+        print(s)
+
     # fn = "coil.config"
     # coil = Coil3Ph(cfgfile=fn)
 
-    if True:  # 3phase coil
+    if False:  # 3phase coil
         coil = Coil3Ph()
         coil._replication = 1
         coil._od = 20
