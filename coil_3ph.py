@@ -6,15 +6,15 @@
 # URL: https://dev-docs.kicad.org/en/file-formats/sexpr-pcb/#_graphic_items_section:~:text=on%20the%20board.-,Tracks%20Section,-This%20section%20lists
 
 
-from typing import Tuple
-import numpy as np
-import plotly.graph_objects as go
-import configparser
-from pint import UnitRegistry
+import copy
 import os
 import uuid
-import copy
 import warnings
+from typing import Tuple
+
+import numpy as np
+import plotly.graph_objects as go
+from pint import UnitRegistry
 
 # KiCAD Python
 # pip install kicad_python
@@ -23,9 +23,7 @@ import warnings
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# TODO: Add bottom layer coil.  Will need to mirror/flip numerically myself to properly align.
-# TODO: Add via to bottom layer
-# TODO: Add B & C phases, rotated.
+# TODO: Add via
 # TODO: Add text label "gr_text" to each phase
 # ex:  (gr_text "PhA+" (at 116.84 91.44 45) (layer "F.SilkS") (effects (font (size 1.5 1.5) (thickness 0.3)))
 # TODO: Add coil on bottom side. How to connect?
@@ -37,7 +35,7 @@ import warnings
 # TODO: Add optional center hole: radius
 # TODO: Inject comments as "gr_text" elements on layer "User.Comments"
 #       Can we create a special layer for this?
-# TODO: Coil needs to capture number of turns in GenerateGeo().
+# TODO: Coil needs to capture number of turns in Generate().
 # TODO: Estimate coil trace resistance.
 #       * TraceLen implemented.
 #       * Need to capture Copper thickness/weight
@@ -51,6 +49,9 @@ import warnings
 #       * Add elements to end.
 # TODO: Completeness: Property getter/setters for Segment and Arc
 # TODO: Completeness: Property getter/setters for SectorCoil
+# TODO: Toml config files for reading coil configs.
+#       >> pip install tomli
+#       URL: https://github.com/hukkin/tomli
 
 
 class Point:
@@ -296,6 +297,16 @@ class Segment(Track):
         self._start.Rotate(angle, x, y)
         self._end.Rotate(angle, x, y)
 
+    def ChangeSideFlip(self):
+        """
+        Flips geometry for placing on opposite side.
+        """
+
+        # Just flip start & end
+        temp = copy.deepcopy(self._end)
+        self._end = copy.deepcopy(self._start)
+        self._start = temp
+
     def ToKiCad(self, indent: str = "") -> str:
         """
         Converts Segment to KiCAD string.
@@ -433,6 +444,16 @@ class Arc(Track):
         self._start += angle
         self._end += angle
 
+    def ChangeSideFlip(self):
+        """
+        Flips geometry for placing on opposite side.
+        """
+
+        # Just flip start & end
+        temp = copy.deepcopy(self._end)
+        self._end = copy.deepcopy(self._start)
+        self._start = temp
+
     def ToKiCad(self, indent: str = "") -> str:
         """
         Converts Arc to KiCAD string.
@@ -534,7 +555,7 @@ class Group:
             # of objects.
             setattr(result, k, deepcopy(v, memo))
 
-        result._id = uuid.uuid4()
+        result._id = uuid.uuid4()  # assign new uique ID.
 
         return result
 
@@ -619,6 +640,17 @@ class Group:
         for g in self._members:
             g.Rotate(angle, x, y)
 
+    def ChangeSideFlip(self):
+        """
+        Flips Group memeber individual geometry for placing on opposite side.
+        NOTE: Does not flip as a group.  I.e. each element will end up under
+              where it was, not at the opposite side of the group.
+        """
+
+        # Process member list
+        for g in self._members:
+            g.ChangeSideFlip()
+
     def ToKiCad(self, indent: str = "") -> str:
         """
         Converts Group list and all children to KiCAD string.
@@ -691,13 +723,6 @@ class SectorCoil(Group):
         self.Generate()
 
     @property
-    def net(self) -> int:
-        """
-        Net ID property getter.
-        """
-        return self._net
-
-    @property
     def layer(self) -> str:
         """
         Returns layer for SectorCoil.
@@ -719,6 +744,31 @@ class SectorCoil(Group):
 
         value = str(value)
         self._layer = value
+
+    @property
+    def net(self) -> int:
+        """
+        Net ID property getter.
+        """
+        return self._net
+
+    @net.setter
+    def net(self, value: int = 1) -> None:
+        """
+        Net property setter.
+
+        Args:
+            value (int, optional): ID of net. Defaults to 1.
+        """
+
+        net = int(value)
+        if net < 1:
+            raise ValueError(f"Net ID < 1: {value}")
+
+        self._net = net
+
+        # For regeneration of geometry
+        self.Generate()
 
     @property
     def width(self) -> float:
@@ -749,23 +799,119 @@ class SectorCoil(Group):
 
         self._width = width
 
-    @net.setter
-    def net(self, value: int = 1) -> None:
+    @property
+    def spacing(self) -> float:
         """
-        Net property setter.
+        Track spacing property getter.
+
+        Returns:
+            float: track spacing.
+        """
+
+        return self._spacing
+
+    @spacing.setter
+    def spacing(self, value: float = 0.2):
+        """
+        Track spacing getter.
 
         Args:
-            value (int, optional): ID of net. Defaults to 1.
+            value (float, optional): Track spacing. Defaults to 0.2.
         """
 
-        net = int(value)
-        if net < 1:
-            raise ValueError(f"Net ID < 1: {value}")
+        spacing_orig = value
+        spacing = float(value)
+        if len(spacing) != 1:
+            raise ValueError(f"Track spacing must be scalar: {spacing_orig}")
+        if spacing <= 0.0:
+            raise ValueError(f"Track spacing positive: {spacing_orig}")
 
-        self._net = net
+        self._spacing = spacing
 
-        # For regeneration of geometry
-        self.Generate()
+    @property
+    def dia_outside(self) -> float:
+        """
+        Track dia_outside property getter.
+
+        Returns:
+            float: track dia_outside.
+        """
+
+        return self._dia_outside
+
+    @dia_outside.setter
+    def dia_outside(self, value: float = 30):
+        """
+        Track dia_outside getter.
+
+        Args:
+            value (float, optional): Track dia_outside. Defaults to 30.
+        """
+
+        dia_outside_orig = value
+        dia_outside = float(value)
+        if len(dia_outside) != 1:
+            raise ValueError(f"Track dia_outside must be scalar: {dia_outside_orig}")
+        if dia_outside <= 0.0:
+            raise ValueError(f"Track dia_outside positive: {dia_outside_orig}")
+
+        self._dia_outside = dia_outside
+
+    @property
+    def dia_inside(self) -> float:
+        """
+        Track dia_inside property getter.
+
+        Returns:
+            float: track dia_inside.
+        """
+
+        return self._dia_inside
+
+    @dia_inside.setter
+    def dia_inside(self, value: float = 10):
+        """
+        Track dia_inside getter.
+
+        Args:
+            value (float, optional): Track dia_intside. Defaults to 10.
+        """
+
+        dia_inside_orig = value
+        dia_inside = float(value)
+        if len(dia_inside) != 1:
+            raise ValueError(f"Track dia_inside must be scalar: {dia_inside_orig}")
+        if dia_inside <= 0.0:
+            raise ValueError(f"Track dia_inside positive: {dia_inside_orig}")
+
+        self._dia_inside = dia_inside
+
+    @property
+    def angle(self) -> float:
+        """
+        Track angle property getter.
+
+        Returns:
+            float: track angle.
+        """
+
+        return self._angle
+
+    @angle.setter
+    def angle(self, value: float = np.pi / 2):
+        """
+        Track angle getter.
+
+        Args:
+            value (float, optional): Track dia_intside. Defaults to pi/2.
+        """
+
+        angle_orig = value
+        angle = float(value)
+        if angle <= 0.0:
+            raise ValueError(f"Track angle positive: {angle_orig}")
+
+        self._angle = angle
 
     def Generate(self):
         """
@@ -774,6 +920,8 @@ class SectorCoil(Group):
         All segments define the midpoints of the track.
 
         """
+
+        self._members = []
 
         def angle_change(radius):
             """
@@ -883,149 +1031,131 @@ class SectorCoil(Group):
         self.Translate(self._center.x, self._center.y)
 
 
-class Coil3Ph:
+class MultiPhaseCoil(Group):
     """
-    3-phase coil geometry generator for KiCad.
+    Multiple phase coil geometry generator for KiCad.
+    WARNING: All distance/length units assumed to be mm.
     """
 
-    def __init__(self, cfgfile: str = None):
+    # TODO: Use __getattr__ to pass through calls to coil.
+    #       See: https://rosettacode.org/wiki/Respond_to_an_unknown_method_call#Python
+
+    def __init__(self):
         """
         Constructor.
         """
 
-        # Load file if specified
-        if cfgfile is not None:
-            self.Load(cfgfile=cfgfile)
+        super().__init__()
 
         # Defaults
-        self._units = "mm"
-        self._layers = ["F.Cu", "B.Cu"]
-        self._net_phA = 1
-        self._net_phB = 1
-        self._net_phC = 1
-        self._width = 0.2
-        self._spacing = 0.2
-        self._od = 50
-        self._id = 10
-        self._replication = 1
+        # self._layers = ["F.Cu", "B.Cu"]
+        self._layers = ["F.Cu"]
+        self._nets = [1, 2, 3]
+        self._multiplicity = 1
 
-        self._geo = None
+        # Base coil info.
+        # We'll treat this like a pseudo-base class and store
+        # coil parameters directly into the coil.
+        self._coil = SectorCoil()
 
-        # Set up handling of mils
-        ureg = UnitRegistry()
-        ureg.define("mil = 0.001 in")
-        self.Q = ureg.Quantity
-
-    def Load(self, cfgfile: str = None):
-        if cfgfile is None:
-            raise FileExistsError("No configuration file specified.")
-
-        config = configparser.ConfigParser()
-        res = config.read(cfgfile)
-        if len(res) == 0:
-            raise FileExistsError(
-                f"Config file not found or contents invalid: {cfgfile}"
-            )  # noqa: E501
-
-    def Plot(self):
+    @property
+    def layers(self) -> list:
         """
-        Generates Plotly plot of coil.
+        Returns coil layer list.
+
+        Returns:
+            list: List of layer names.
         """
 
-        if self._geo is None:
-            self.GenerateGeo()
+        return self._layers
 
-        # Create figure
-        fig = go.Figure()
+    # TODO: @layers.setter
 
-        def arc(radius, angles, n=100):
-            """
-            Plot an arc.
-            """
-
-            d_theta = np.diff(angles) / n
-
-            theta = np.arange(angles[0], angles[1], d_theta)
-            x = radius * np.cos(theta)
-            y = radius * np.sin(theta)
-
-            return x, y
-
-        # Single coil
-        x = np.array([])
-        y = np.array([])
-        for seg in self._geo:
-            if seg[0] == "line":
-                x = np.append(x, seg[1][0])
-                x = np.append(x, seg[1][2])
-                y = np.append(y, seg[1][1])
-                y = np.append(y, seg[1][3])
-
-            elif seg[0] == "arc":
-                # Pretty arc.
-                radius = np.sqrt(seg[1][0] ** 2 + seg[1][1] ** 2)
-                a1 = np.arctan2(seg[1][1], seg[1][0])
-                a2 = np.arctan2(seg[1][5], seg[1][4])
-                arc_x, arc_y = arc(radius, [a1, a2])
-
-                x = np.append(x, arc_x)
-                y = np.append(y, arc_y)
-
-            else:
-                raise ValueError(f"Unsupported geometry type: {seg[0]}")
-
-        # Generate the plot
-        trc = go.Scatter(x=x, y=y)
-        fig.add_trace(trc)
-
-        fig.update_yaxes(
-            scaleanchor="x",
-            scaleratio=1,
-        )
-        fig.show()
-
-    def Translate(self, delta=Point):
+    @property
+    def nets(self) -> list:
         """
-        Translates geometry by given offset [x,y].
+        Returns list of nets in multi-phase coil.
+
+        Returns:
+            list: List of net numeric ID's.
         """
 
-        # Process geometry list
-        for g in self._geo:
-            g.Translate(delta.x, delta.y)
+        return self._nets
 
-    def ToKiCad(self, filename: str = None, to_stdout: bool = False):
+    @property
+    def multiplicity(self) -> int:
         """
-        Converts geometry to KiCAD PCB format.
+        Returns multiplicity of coils in a layer
+
+        Returns:
+            int: Multiplicity
         """
 
-        if self._geo is None:
-            self.GenerateGeo()
+        return self._multiplicity
 
-        eol = os.linesep
-        s = ""
+    # TODO: @multiplicity.setter
 
-        # Process all geometry data
-        for g in self._geo:
-            s += g.ToKiCad() + eol
-        s += eol
+    def Generate(self):
+        """
+        Generates multi-phase coil geometry.
 
-        # Add that geo to a group.
-        g = Group(members=self._geo, name="PhA")
-        s += g.ToKiCad()
+        Key parameters:
+        * layers - A full multi-phase coil is generated for each layer,
+                   flipped from the layer above it.
+        * nets - Defines the number of coils generated.
+                 If two nets are provided, a two phase coil is generated.
+                 if three nets are provided, a three phase coil is generated.
+        * multiplicity - Replicates the phases in the coil.
 
-        # Output options
-        if filename is not None:
-            with open(filename, "w") as fp:
-                fp.write(s)
+        """
 
-        if to_stdout:
-            print(s)
+        # Clear out existing geometry.
+        self._members = []
 
-        return s
+        # Coil angle
+        angle_deg = 360 / len(self.nets) / self.multiplicity
+        angle_rad = angle_deg * np.pi / 180
+
+        # Update the base coil.  Then we'll just copy and move.
+        self._coil.angle = angle_rad
+        self._coil.Generate()
+
+        # Generte list of coil phase names.
+        ph_chr = np.arange(0, len(self.nets), dtype=int) + 65
+        ph_name = [f"Ph{chr(x)}" for x in ph_chr]
+
+        # Create first layer set of coils.
+        # We can then just copy that to other layers
+        layer_g = Group()
+        for i_net, n in enumerate(self.nets):
+            c = copy.deepcopy(self._coil)
+            name = ph_name[i_net]
+            if self.multiplicity > 1:
+                name += "1"  # First layer
+            c.name = name
+            c.net = self.nets[i_net]
+            c.Rotate(angle_rad * i_net)
+            layer_g.AddMember(c)
+
+        # Create other layers.
+        if len(self.layers) > 1:
+            for l in self.layers:
+                pass
+        else:
+            # Only 1 layer in the group, so make that
+            # layer's group the main group.
+            self._members = layer_g._members
 
 
 #%%
 if __name__ == "__main__":
+
+    if True:
+        # Three phase test
+        c = MultiPhaseCoil()
+        c.Generate()
+        c.Translate(x=120, y=90)
+        print(c.ToKiCad())
 
     if False:  # Base geometry elements
         seg = Segment(Point(0, 0), Point(10, 10), width=0.25)
@@ -1036,7 +1166,8 @@ if __name__ == "__main__":
         arc.Rotate(np.pi / 2)
         print(arc.ToKiCad())
 
-    if True:
+    # 4-quadrant coils.
+    if False:
         g = Group(name="Quadrants")
 
         c1 = SectorCoil()
@@ -1064,6 +1195,25 @@ if __name__ == "__main__":
 
         s = g.ToKiCad()
 
+        print(s)
+
+    # Coil flip test.
+    if False:
+        g = Group("Flip Test")
+
+        c1 = SectorCoil()
+        c1.name = "Top"
+        c1.Generate()
+        g.AddMember(c1)
+
+        c2 = copy.deepcopy(c1)
+        c2.name = "Bottom"
+        c2.layer = "B.Cu"
+        c2.ChangeSideFlip()
+        c2.Generate()
+        g.AddMember(c2)
+
+        s = g.ToKiCad()
         print(s)
 
     # fn = "coil.config"
