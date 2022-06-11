@@ -1704,9 +1704,13 @@ class MultiPhaseCoil(Group):
             layer_g.AddMember(c)
 
             # Create coil text
-            t = GrText(
-                text=name,
-            )
+            t = GrText(text=name)
+            r = self._coil.dia_outside / 2
+            r += t.size
+            x = r * np.cos(self._coil.angle / 2)
+            y = r * np.cos(self._coil.angle / 2)
+            t.position = Point(x, y)
+            layer_g.AddMember(t)
 
         # Create other layers.
         if len(self.layers) > 1:
