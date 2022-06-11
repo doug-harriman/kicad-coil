@@ -1842,17 +1842,18 @@ class MultiPhaseCoil(Group):
 
         # Generte list of coil phase names.
         ph_chr = np.arange(0, len(self.nets), dtype=int) + 65
-        ph_name = [f"Ph{chr(x)}" for x in ph_chr]
+        ph_name = [f"Ph{chr(x)}" for x in ph_chr] * self.multiplicity
+        if self.multiplicity > 1:
+            for i, _ in enumerate(ph_name):
+                ph_name[i] = ph_name[i] + str(1 + int(i / len(self.nets)))
 
         # Create first layer set of coils.
         # We can then just copy that to other layers
         layer_g = Group()
-        for i_net, n in enumerate(self.nets):
+        for i_net, n in enumerate(self.nets * self.multiplicity):
             # Create individual coil
             c = copy.deepcopy(self._coil)
             name = ph_name[i_net]
-            if self.multiplicity > 1:
-                name += "1"  # First layer
             c.name = name
             c.net = n
             c.Rotate(angle_rad * i_net)
@@ -1946,6 +1947,7 @@ if __name__ == "__main__":
     if True:
         # Three phase test
         c = MultiPhaseCoil()
+        c.multiplicity = 3
         c.layers = ["F.Cu", "B.Cu"]
         c.Generate()
         c.Translate(x=120, y=90)
