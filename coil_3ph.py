@@ -275,8 +275,6 @@ class Segment(Track):
 
         width_orig = value
         width = float(value)
-        if len(width) != 1:
-            raise ValueError(f"Track width must be scalar: {width_orig}")
         if width <= 0.0:
             raise ValueError(f"Track width positive: {width_orig}")
 
@@ -422,8 +420,6 @@ class Arc(Track):
 
         width_orig = value
         width = float(value)
-        if len(width) != 1:
-            raise ValueError(f"Track width must be scalar: {width_orig}")
         if width <= 0.0:
             raise ValueError(f"Track width positive: {width_orig}")
 
@@ -689,12 +685,12 @@ class Group:
             float: Trace length.
         """
 
-        l = 0
+        tracklen = 0
         for m in self.members:
             if isinstance(m, Track):
-                l += m.TraceLen()
+                tracklen += m.TraceLen()
 
-        return l
+        return tracklen
 
 
 class SectorCoil(Group):
@@ -792,8 +788,6 @@ class SectorCoil(Group):
 
         width_orig = value
         width = float(value)
-        if len(width) != 1:
-            raise ValueError(f"Track width must be scalar: {width_orig}")
         if width <= 0.0:
             raise ValueError(f"Track width positive: {width_orig}")
 
@@ -821,8 +815,6 @@ class SectorCoil(Group):
 
         spacing_orig = value
         spacing = float(value)
-        if len(spacing) != 1:
-            raise ValueError(f"Track spacing must be scalar: {spacing_orig}")
         if spacing <= 0.0:
             raise ValueError(f"Track spacing positive: {spacing_orig}")
 
@@ -850,8 +842,6 @@ class SectorCoil(Group):
 
         dia_outside_orig = value
         dia_outside = float(value)
-        if len(dia_outside) != 1:
-            raise ValueError(f"Track dia_outside must be scalar: {dia_outside_orig}")
         if dia_outside <= 0.0:
             raise ValueError(f"Track dia_outside positive: {dia_outside_orig}")
 
@@ -879,8 +869,6 @@ class SectorCoil(Group):
 
         dia_inside_orig = value
         dia_inside = float(value)
-        if len(dia_inside) != 1:
-            raise ValueError(f"Track dia_inside must be scalar: {dia_inside_orig}")
         if dia_inside <= 0.0:
             raise ValueError(f"Track dia_inside positive: {dia_inside_orig}")
 
@@ -1069,7 +1057,28 @@ class MultiPhaseCoil(Group):
 
         return self._layers
 
-    # TODO: @layers.setter
+    @layers.setter
+    def layers(self, value: list = None) -> None:
+        """
+        Layers property setter.
+
+        Args:
+            value (list): List of layer names.
+                          Note: Names are not checked for validity.
+        """
+
+        if value is None:
+            raise ValueError("No layers specified.")
+
+        if isinstance(value, str):
+            value = [value]
+
+        # Make sure all are strings
+        for v in value:
+            if not isinstance(v, str):
+                raise ValueError(f"Invalid layer value: {v}")
+
+        self._layers = value
 
     @property
     def nets(self) -> list:
@@ -1093,7 +1102,21 @@ class MultiPhaseCoil(Group):
 
         return self._multiplicity
 
-    # TODO: @multiplicity.setter
+    @multiplicity.setter
+    def multiplicity(self, value: int):
+        """
+        Multiplicity property setter.
+
+        Args:
+            value (int): Number of times to repeat each phase of coil.
+                         Phase count set by number of nets in nets property.
+        """
+
+        value = int(value)
+        if value < 1:
+            raise ValueError(f"Value must be >0: {value}")
+
+        self._multiplicity = value
 
     def Generate(self):
         """
