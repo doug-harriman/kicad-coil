@@ -552,7 +552,7 @@ class Arc(Track):
     def __init__(
         self,
         center: Point = Point(),
-        radius: float = 1.0,
+        radius: float = 10.0,
         start: float = 0.0,
         end: float = np.pi,
         width: float = 0.1,
@@ -609,6 +609,33 @@ class Arc(Track):
         self._layer = value
 
     @property
+    def radius(self) -> float:
+        """
+        Arc track radius property getter.
+
+        Returns:
+            float: Arc track radius.
+        """
+
+        return self._radius
+
+    @radius.setter
+    def radius(self, value: float = 10) -> None:
+        """
+        Arc track radius setter.
+
+        Args:
+            value (float, optional): Track radius. Defaults to 10.
+        """
+
+        radius_orig = value
+        radius = float(value)
+        if radius <= 0.0:
+            raise ValueError(f"Track radius must be positive: {radius_orig}")
+
+        self._radius = radius
+
+    @property
     def width(self) -> float:
         """
         Arc track width property getter.
@@ -631,7 +658,7 @@ class Arc(Track):
         width_orig = value
         width = float(value)
         if width <= 0.0:
-            raise ValueError(f"Track width positive: {width_orig}")
+            raise ValueError(f"Track width must be positive: {width_orig}")
 
         self._width = width
 
@@ -660,7 +687,7 @@ class Arc(Track):
         """
 
         pt = Point(self._radius, 0)
-        pt.Rotate(np.mean([self._start, self._end]))
+        pt.Rotate(self.mid)
         pt.Translate(self._center.x, self._center.y)
 
         return pt
@@ -679,6 +706,17 @@ class Arc(Track):
         pt.Translate(self._center.x, self._center.y)
 
         return pt
+
+    @property
+    def mid(self) -> float:
+        """
+        Arc mid point angle property getter.  Read only.
+
+        Returns:
+            float: Mid-point angle
+        """
+
+        return np.mean([self._start, self._end])
 
     def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
         """
@@ -750,6 +788,266 @@ class Arc(Track):
         """
 
         return self._radius * np.abs(self._start - self._end)
+
+
+class GrText:
+    """
+    Text graphics object.
+    """
+
+    def __init__(
+        self,
+        position: Point = Point(),
+        text: str = "",
+        layer: str = "F.SilkS",
+        angle: float = 0.0,
+        size: float = 1.5,
+        mirror: bool = False,
+    ):
+
+        self._id = uuid.uuid4()
+        self.position = position
+        self.layer = layer
+        self.text = text
+        self.angle = angle
+        self.size = size
+        self._mirror = bool(mirror)
+
+    def __deepcopy__(self, memo):
+        """
+        Deep copy of Track class with new UUIO.
+        """
+
+        # Per:
+        # https://stackoverflow.com/questions/57181829/deepcopy-override-clarification
+
+        from copy import deepcopy
+
+        cls = self.__class__  # Extract the class of the object
+        # Create a new instance of the object based on extracted class
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+
+            # Copy over attributes by copying directly or in case of complex
+            # objects like lists for exaample calling the `__deepcopy()__`
+            # method defined by them. Thus recursively copying the whole tree
+            # of objects.
+            setattr(result, k, deepcopy(v, memo))
+
+        result._id = uuid.uuid4()
+
+        return result
+
+    def __str__(self) -> str:
+
+        return self.text
+
+    def __repr__(self) -> str:
+
+        mirrorstr = ""
+        if self.mirror:
+            mirrorstr = " Mirrored, "
+
+        s = (
+            f"GrText:{self.position}, "
+            f'"{self.text}", '
+            f"{mirrorstr}"
+            f"Angle:{self.angle:0.3f}, "
+            f'Layer:"{self.layer}", '
+            f"ID:{str(self.id)}"
+        )
+
+        return s
+
+    @property
+    def text(self) -> str:
+        """
+        GrText text property getter.
+
+        Returns:
+            str: Text to display.
+        """
+
+        return self._text
+
+    @text.setter
+    def text(self, value: str = "") -> None:
+        """
+        GrText text property setter.
+
+        Args:
+            value (str): Text to display. Default="".
+        """
+
+        if not isinstance(value, str):
+            raise TypeError(f"Invalid data type passed: {type(value)}")
+
+        self._text = value
+
+    @property
+    def id(self) -> uuid:
+        """
+        Returns the UUID of the GrText.
+        """
+        return self._id
+
+    @property
+    def position(self) -> Point:
+        """
+        GrText position property getter.
+
+        Returns:
+            Point: GrText center position.
+        """
+
+        return self._position
+
+    @position.setter
+    def position(self, value: Point = Point()) -> None:
+        """
+        GrText center position getter.
+
+        Args:
+            value (Point): Center position.
+
+        Raises:
+            ValueError: Invalid position value type.
+        """
+
+        if not isinstance(value, Point):
+            return TypeError(f"Invalid position value type: {type(value)}")
+
+        self._position = value
+
+    @property
+    def angle(self) -> float:
+        """
+        GrText angle property getter.
+
+        Returns:
+            float: track angle.
+        """
+
+        return self._angle
+
+    @angle.setter
+    def angle(self, value: float = 0):
+        """
+        GrText angle getter.
+
+        Args:
+            value (float, optional): GrText rotation angle. Defaults to 0.
+        """
+
+        angle = float(value)
+        self._angle = angle
+
+    @property
+    def layer(self) -> str:
+        """
+        Returns layer for GrText.
+
+        Returns:
+            str: Layer
+        """
+
+        return self._layer
+
+    @layer.setter
+    def layer(self, value: str = "F.SilkS"):
+        """
+        Sets layer for GrText.
+
+        Args:
+            value (str, optional): Layer name. Defaults to 'F.SilkS'.
+        """
+
+        value = str(value)
+        self._layer = value
+
+    @property
+    def mirror(self) -> bool:
+        """
+        Mirror property getter.
+        NOTE: Use ChangeSideFlip method to mirror text.
+
+        Returns:
+            bool: True if text is mirrored.
+        """
+
+        return self._mirror
+
+    @property
+    def size(self) -> float:
+        """
+        GrText font size property getter.
+        Note: X & Y sizes are the same.
+
+        Returns:
+            float: GrText size.
+        """
+
+        return self._size
+
+    @size.setter
+    def size(self, value: float = 1.5) -> None:
+        """
+        GrText font size setter.
+
+        Args:
+            value (float, optional): GrText size. Defaults to 1.5.
+        """
+
+        size_orig = value
+        size = float(value)
+        if size <= 0.0:
+            raise ValueError(f"GrText size must be positive: {size_orig}")
+
+        self._size = size
+
+    def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Translates the GrText by the given distances.
+        """
+        self.position.Translate(x, y)
+
+    def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Rotates the GrText about the given x,y coordinates by the given angle in radians.
+        """
+        self.angle += angle
+        self.position.Rotate(angle, x, y)
+
+    def ChangeSideFlip(self):
+        """
+        Flips text for placing on opposite side.
+        """
+
+        self._mirror = not self._mirror
+
+    def ToKiCad(self, indent: str = "") -> str:
+        """
+        Converts GrText to KiCAD string.
+        """
+
+        mirrorstr = ""
+        if self.mirror:
+            mirrorstr = f"(justify mirror)"
+
+        s = (
+            f"{indent}"
+            f'(gr_text "{self.text}" '
+            f"(at {self.position.ToKiCad()} {self.angle:0.6f}) "
+            f'Layer:"{self._layer}", '
+            f"(tstamp {str(self.id)})"
+            f"{os.linesep}"
+            f"(effects (font (size {self.size:0.3f} {self.size:0.3f}) (thickness 0.3)) {mirrorstr})"
+            f"{os.linesep}"
+            f")"
+            f"{os.linesep}"
+        )
+        return s
 
 
 class Group:
@@ -1395,6 +1693,7 @@ class MultiPhaseCoil(Group):
         # We can then just copy that to other layers
         layer_g = Group()
         for i_net, n in enumerate(self.nets):
+            # Create individual coil
             c = copy.deepcopy(self._coil)
             name = ph_name[i_net]
             if self.multiplicity > 1:
@@ -1403,6 +1702,11 @@ class MultiPhaseCoil(Group):
             c.net = self.nets[i_net]
             c.Rotate(angle_rad * i_net)
             layer_g.AddMember(c)
+
+            # Create coil text
+            t = GrText(
+                text=name,
+            )
 
         # Create other layers.
         if len(self.layers) > 1:
