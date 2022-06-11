@@ -386,7 +386,7 @@ class Via(Track):
         s = (
             f"{indent}"
             f"(via "
-            f"(at {self.center.ToKiCad()}) "
+            f"(at {self.position.ToKiCad()}) "
             f"(size {self.size}) "
             f"(drill {self.drill}) "
             f"(layers{layerstr})"
@@ -454,7 +454,7 @@ class Segment(Track):
             value = Point(0, 1)
         if not isinstance(value, Point):
             raise TypeError(f"Expected value of type point, not: {type(value)}")
-        self._start = copy.deepcopy(value)  # Have our own point.
+        self._start = value  # Have our own point.
 
     @property
     def end(self) -> Point:
@@ -482,7 +482,7 @@ class Segment(Track):
             value = Point(0, 1)
         if not isinstance(value, Point):
             raise TypeError(f"Expected value of type point, not: {type(value)}")
-        self._end = copy.deepcopy(value)  # Have our own point.
+        self._end = value  # Have our own point.
 
     @property
     def layer(self) -> str:
@@ -538,8 +538,8 @@ class Segment(Track):
         """
         Translates the Segment Track by the given distances.
         """
-        self.start.Translate(x, y)
-        self.end.Translate(x, y)
+        self._start.Translate(x, y)
+        self._end.Translate(x, y)
 
     def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
         """
@@ -666,7 +666,7 @@ class Arc(Track):
             value = Point(0, 1)
         if not isinstance(value, Point):
             raise TypeError(f"Expected value of type point, not: {type(value)}")
-        self._center = copy.deepcopy(value)  # Have our own point.
+        self._center = value  # Have our own point.
 
     @property
     def start(self) -> float:
@@ -1420,6 +1420,17 @@ class SectorCoil(Group):
         value = str(value)
         self._layer = value
 
+        # If we have already generated geometry,
+        # move all geometry elements to the new layer.
+        if len(self.members) > 0:
+            for el in self.members:
+                try:
+                    el.layer = self.layer
+                except:
+                    warnings.warn(
+                        f'Unable to set layer "{self.layer}" for element: {el}'
+                    )
+
     @property
     def net(self) -> int:
         """
@@ -1715,7 +1726,6 @@ class MultiPhaseCoil(Group):
         super().__init__()
 
         # Defaults
-        # self._layers = ["F.Cu", "B.Cu"]
         self._layers = ["F.Cu"]
         self._nets = [1, 2, 3]
         self._multiplicity = 1
@@ -1756,6 +1766,14 @@ class MultiPhaseCoil(Group):
         for v in value:
             if not isinstance(v, str):
                 raise TypeError(f"Invalid layer value type: {type(v)}:{v}")
+
+        # Support limited to 2-layer boards currently.
+        # For layer count > 2, need to:
+        # * Keep flipping the geometry.
+        # * Place vias only between adjacent layers.
+        # * Silkscreen text only on front and back layers.
+        if len(value) > 2:
+            raise ValueError("MultiPhaseCoil only supports 2 layer boards.")
 
         self._layers = value
 
@@ -1847,7 +1865,7 @@ class MultiPhaseCoil(Group):
 
             # Push text to outside of coil
             r = self._coil.dia_outside / 2
-            r += 3  # Space from coil to text
+            r += 2  # Space from coil to text
             t.Translate(r, 0)
 
             # Rotate text with coil
@@ -1862,17 +1880,63 @@ class MultiPhaseCoil(Group):
 
         # Create other layers.
         if len(self.layers) > 1:
-            for l in self.layers:
 
-                # Create via at center of coil
-                # pos = <coil>.members[-1:][0].pointend
-                # Layers: this and previous.
-                # v = Via(position=pos)
+            for i_layer, layer in enumerate(self.layers):
+                if i_layer == 0:
+                    # First layer, special case.
+                    # Add it in
+                    layer_cur = copy.deepcopy(layer_g)
+                    self.AddMember(layer_cur)
+                    continue
 
-                pass
+                # Copy the pervious layer to the current layer.
+                layer_cur = copy.deepcopy(layer_cur)
+
+                # Flip the layer.
+                # Since we copied the previoius layer, multi-layer coils will
+                # just keep getting flipped back and forth.
+                layer_cur.ChangeSideFlip()
+
+                # Move all top-level elements to new layer.
+                for el in layer_cur.members:
+                    if isinstance(el, SectorCoil):
+                        el.layer = layer
+
+                        # Text was added to the SectorCoil, so find it.
+                        txt = [
+                            child for child in el.members if isinstance(child, GrText)
+                        ][0]
+
+                        # If last layer, then set to bottom layer silk screen
+                        # If not, then remove from the coil.
+                        if layer == self.layers[-1:][0]:
+                            txt.layer = "B.SilkS"
+                        else:
+                            el.members.remove(txt)
+
+                self.AddMember(layer_cur)
+
+                # Create vias at center of coils
+                for coil in layer_cur.members:
+                    # Skip non-coil members.
+                    if not isinstance(coil, SectorCoil):
+                        continue
+
+                    # Via position is at the end of the last,
+                    # half arc in the coil
+                    arcs = [a for a in coil.members if isinstance(a, Arc)]
+                    pos = arcs[-1:][0].pointstart
+
+                    # Via layers are this layer and previous.
+                    layers = [self.layers[i_layer - 1], layer]
+
+                    v = Via(position=pos, layers=layers, net=coil.net)
+
+                    self.AddMember(v)
+
         else:
-            # Only 1 layer in the group, so make that
-            # layer's group the main group.
+            # Only 1 layer in the group, so overwrite that groups members with this group.
+            # This avoids having an additional, unneeded level of grouping.
             self._members = layer_g._members
 
 
@@ -1882,6 +1946,7 @@ if __name__ == "__main__":
     if True:
         # Three phase test
         c = MultiPhaseCoil()
+        c.layers = ["F.Cu", "B.Cu"]
         c.Generate()
         c.Translate(x=120, y=90)
         print(c.ToKiCad())
