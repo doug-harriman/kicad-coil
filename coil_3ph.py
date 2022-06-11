@@ -24,8 +24,6 @@ from pint import UnitRegistry
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
 # TODO: Add via
-# TODO: Add text label "gr_text" to each phase
-# ex:  (gr_text "PhA+" (at 116.84 91.44 45) (layer "F.SilkS") (effects (font (size 1.5 1.5) (thickness 0.3)))
 # TODO: Add coil on bottom side. How to connect?
 # TODO: Add optional mounting holes: count & radius
 # Video link to custom hole geometries:
@@ -33,13 +31,10 @@ from pint import UnitRegistry
 # Video link to non-plated through holes:
 # URL: https://youtu.be/5Be7XOMmPQE?t=1653
 # TODO: Add optional center hole: radius
-# TODO: Inject comments as "gr_text" elements on layer "User.Comments"
-#       Can we create a special layer for this?
 # TODO: Coil needs to capture number of turns in Generate().
 # TODO: Estimate coil trace resistance.
 #       * TraceLen implemented.
 #       * Need to capture Copper thickness/weight
-# TODO: Output turn count per coil
 # TODO: Estimate coil inductance?
 # TODO: Get Plotly plotting working again.
 # TODO: Output code for FEMM model generation.
@@ -47,7 +42,6 @@ from pint import UnitRegistry
 #       * Paren parsing.
 #       * Delete elements by UUID or group name.
 #       * Add elements to end.
-# TODO: Completeness: Property getter/setters for Segment and Arc
 # TODO: Completeness: Property getter/setters for SectorCoil
 # TODO: Toml config files for reading coil configs.
 #       >> pip install tomli
@@ -220,7 +214,7 @@ class Via(Track):
 
     def __init__(
         self,
-        position: Point = Point(),
+        position: Point = None,
         size: float = 0.8,
         drill: float = 0.4,
         layers: str = ["F.Cu", "B.Cu"],
@@ -269,6 +263,9 @@ class Via(Track):
         Raises:
             ValueError: Invalid position value type.
         """
+
+        if value is None:
+            value = Point()
 
         if not isinstance(value, Point):
             return TypeError(f"Invalid position value type: {type(value)}")
@@ -403,8 +400,8 @@ class Via(Track):
 class Segment(Track):
     def __init__(
         self,
-        start: Point = Point(),
-        end: Point = Point(0, 1),
+        start: Point = None,
+        end: Point = None,
         width: float = 0.1,
         layer: str = "F.Cu",
         net: int = 1,
@@ -415,10 +412,10 @@ class Segment(Track):
 
         super().__init__(net)
 
-        self._start = start
-        self._end = end
-        self._width = width
-        self._layer = layer
+        self.start = start
+        self.end = end
+        self.width = width
+        self.layer = layer
 
     def __repr__(self):
         s = (
@@ -429,6 +426,63 @@ class Segment(Track):
             f"{super().__repr__()}"
         )
         return s
+
+    @property
+    def start(self) -> Point:
+        """
+        Segment start point property getter.
+
+        Returns:
+            Point: Start point.
+        """
+        return self._start
+
+    @start.setter
+    def start(self, value: Point = None) -> None:
+        """
+        Segment start point property setter.
+        NOTE: Creates a point of the Point.
+
+        Args:
+            value (Point): Start point.
+
+        Raises:
+            TypeError: Incorrect type provided for value.
+        """
+
+        if value is None:
+            value = Point(0, 1)
+        if not isinstance(value, Point):
+            raise TypeError(f"Expected value of type point, not: {type(value)}")
+        self._start = copy.deepcopy(value)  # Have our own point.
+
+    @property
+    def end(self) -> Point:
+        """
+        Segment end point property getter.
+
+        Returns:
+            Point: end point.
+        """
+        return self._end
+
+    @start.setter
+    def end(self, value: Point = None) -> None:
+        """
+        Segment end point property setter.
+
+        Args:
+            value (Point): End point.
+
+        Raises:
+            TypeError: Incorrect type provided for value.
+        """
+
+        if value is None:
+            value = Point(0, 1)
+        if not isinstance(value, Point):
+            raise TypeError(f"Expected value of type point, not: {type(value)}")
+        self._end = copy.deepcopy(value)  # Have our own point.
 
     @property
     def layer(self) -> str:
@@ -484,8 +538,8 @@ class Segment(Track):
         """
         Translates the Segment Track by the given distances.
         """
-        self._start.Translate(x, y)
-        self._end.Translate(x, y)
+        self.start.Translate(x, y)
+        self.end.Translate(x, y)
 
     def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
         """
@@ -584,6 +638,85 @@ class Arc(Track):
             f"{super().__repr__()}"
         )
         return s
+
+    @property
+    def center(self) -> Point:
+        """
+        Segment center point property getter.
+
+        Returns:
+            Point: center point.
+        """
+        return self._center
+
+    @center.setter
+    def center(self, value: Point = None) -> None:
+        """
+        Segment center point property setter.
+        NOTE: Creates a point of the Point.
+
+        Args:
+            value (Point): center point.
+
+        Raises:
+            TypeError: Incorrect type provided for value.
+        """
+
+        if value is None:
+            value = Point(0, 1)
+        if not isinstance(value, Point):
+            raise TypeError(f"Expected value of type point, not: {type(value)}")
+        self._center = copy.deepcopy(value)  # Have our own point.
+
+    @property
+    def start(self) -> float:
+        """
+        Arc start point property getter.
+
+        Returns:
+            Point: Start point.
+        """
+        return self._start
+
+    @start.setter
+    def start(self, value: float = 0) -> None:
+        """
+        Arc start angle property setter.
+
+        Args:
+            value (Point): Start angle.
+
+        Raises:
+            TypeError: Incorrect type provided for value.
+        """
+
+        value = float(value)
+        self._start = value
+
+    @property
+    def end(self) -> float:
+        """
+        Arc end point property getter.
+
+        Returns:
+            Point: end point.
+        """
+        return self._end
+
+    @end.setter
+    def end(self, value: float = 0) -> None:
+        """
+        Arc end angle property setter.
+
+        Args:
+            value (Point): end angle.
+
+        Raises:
+            TypeError: Incorrect type provided for value.
+        """
+
+        value = float(value)
+        self._end = value
 
     @property
     def layer(self) -> str:
