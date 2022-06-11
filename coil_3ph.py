@@ -797,7 +797,7 @@ class GrText:
 
     def __init__(
         self,
-        position: Point = Point(),
+        position: Point = None,
         text: str = "",
         layer: str = "F.SilkS",
         angle: float = 0.0,
@@ -806,7 +806,10 @@ class GrText:
     ):
 
         self._id = uuid.uuid4()
-        self.position = position
+        if position is None:
+            self.position = Point()
+        else:
+            self.position = position
         self.layer = layer
         self.text = text
         self.angle = angle
@@ -1016,7 +1019,7 @@ class GrText:
         """
         Rotates the GrText about the given x,y coordinates by the given angle in radians.
         """
-        self.angle += angle
+        self.angle -= angle
         self.position.Rotate(angle, x, y)
 
     def ChangeSideFlip(self):
@@ -1038,13 +1041,14 @@ class GrText:
         s = (
             f"{indent}"
             f'(gr_text "{self.text}" '
-            f"(at {self.position.ToKiCad()} {self.angle:0.6f}) "
-            f'Layer:"{self._layer}", '
+            f"(at {self.position.ToKiCad()} {self.angle*180/np.pi:0.3f}) "  # GrText angle in deg
+            f'(layer "{self._layer}") '
             f"(tstamp {str(self.id)})"
             f"{os.linesep}"
+            f"{indent*2}"
             f"(effects (font (size {self.size:0.3f} {self.size:0.3f}) (thickness 0.3)) {mirrorstr})"
             f"{os.linesep}"
-            f")"
+            f"{indent})"
             f"{os.linesep}"
         )
         return s
@@ -1699,18 +1703,29 @@ class MultiPhaseCoil(Group):
             if self.multiplicity > 1:
                 name += "1"  # First layer
             c.name = name
-            c.net = self.nets[i_net]
+            c.net = n
             c.Rotate(angle_rad * i_net)
-            layer_g.AddMember(c)
 
             # Create coil text
             t = GrText(text=name)
+
+            # Orients text facing out.
+            t.Rotate(-np.pi / 2)
+
+            # Push text to outside of coil
             r = self._coil.dia_outside / 2
-            r += t.size
-            x = r * np.cos(self._coil.angle / 2)
-            y = r * np.cos(self._coil.angle / 2)
-            t.position = Point(x, y)
-            layer_g.AddMember(t)
+            r += 3  # Space from coil to text
+            t.Translate(r, 0)
+
+            # Rotate text with coil
+            txt_angle = angle_rad * i_net + angle_rad / 2
+            t.Rotate(txt_angle)
+
+            # Add label to coil
+            c.AddMember(t)
+
+            # Add coil to layer
+            layer_g.AddMember(c)
 
         # Create other layers.
         if len(self.layers) > 1:
