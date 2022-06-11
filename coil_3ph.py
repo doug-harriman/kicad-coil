@@ -23,8 +23,6 @@ from pint import UnitRegistry
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# TODO: Add via
-# TODO: Add coil on bottom side. How to connect?
 # TODO: Add optional mounting holes: count & radius
 # Video link to custom hole geometries:
 # URL: https://youtu.be/5Be7XOMmPQE?t=1592
@@ -1715,9 +1713,6 @@ class MultiPhaseCoil(Group):
     WARNING: All distance/length units assumed to be mm.
     """
 
-    # TODO: Use __getattr__ to pass through calls to coil.
-    #       See: https://rosettacode.org/wiki/Respond_to_an_unknown_method_call#Python
-
     def __init__(self):
         """
         Constructor.
@@ -1788,6 +1783,28 @@ class MultiPhaseCoil(Group):
 
         return self._nets
 
+    @nets.setter
+    def nets(self, value: list = None) -> None:
+        """
+        MultiPhaseCoil nets list setter.
+        Phase count determined by length of nets list.
+
+        Args:
+            value (list): List of net ID's (ints)
+        """
+
+        if value is None:
+            raise ValueError("No nets specified.")
+        if not isinstance(value, list):
+            value = list(value)
+        if len(value) < 2:
+            raise ValueError("Net list length must be > 1: {value}")
+        for el in value:
+            if not isinstance(el, int):
+                raise ValueError(f"All net IDs must be ints: {el}")
+
+        self._nets = value
+
     @property
     def multiplicity(self) -> int:
         """
@@ -1814,6 +1831,93 @@ class MultiPhaseCoil(Group):
             raise ValueError(f"Value must be >0: {value}")
 
         self._multiplicity = value
+
+    @property
+    def width(self) -> float:
+        """
+        Coil track width property getter.
+
+        Returns:
+            float: Sector track width.
+        """
+
+        return self._coil._width
+
+    @width.setter
+    def width(self, value: float = 0.2) -> None:
+        """
+        Coil track width setter.
+
+        Args:
+            value (float, optional): Track width. Defaults to 0.2.
+        """
+
+        self._coil._width = value
+
+    @property
+    def spacing(self) -> float:
+        """
+        Coil track spacing property getter.
+
+        Returns:
+            float: track spacing.
+        """
+
+        return self._coil._spacing
+
+    @spacing.setter
+    def spacing(self, value: float = 0.2):
+        """
+        Coil track spacing getter.
+
+        Args:
+            value (float, optional): Track spacing. Defaults to 0.2.
+        """
+        self._coil._spacing = value
+
+    @property
+    def dia_outside(self) -> float:
+        """
+        Coil track dia_outside property getter.
+
+        Returns:
+            float: track dia_outside.
+        """
+
+        return self._coil._dia_outside
+
+    @dia_outside.setter
+    def dia_outside(self, value: float = 30):
+        """
+        Coil track dia_outside getter.
+
+        Args:
+            value (float, optional): Track dia_outside. Defaults to 30.
+        """
+
+        self._coil._dia_outside = value
+
+    @property
+    def dia_inside(self) -> float:
+        """
+        Coil rack dia_inside property getter.
+
+        Returns:
+            float: track dia_inside.
+        """
+
+        return self._coil._dia_inside
+
+    @dia_inside.setter
+    def dia_inside(self, value: float = 10):
+        """
+        Coil rack dia_inside getter.
+
+        Args:
+            value (float, optional): Track dia_intside. Defaults to 10.
+        """
+
+        self._coil._dia_inside = value
 
     def Generate(self):
         """
@@ -1855,6 +1959,7 @@ class MultiPhaseCoil(Group):
             c = copy.deepcopy(self._coil)
             name = ph_name[i_net]
             c.name = name
+            c.layer = self.layers[0]
             c.net = n
             c.Rotate(angle_rad * i_net)
 
@@ -1947,10 +2052,12 @@ if __name__ == "__main__":
     if True:
         # Three phase test
         c = MultiPhaseCoil()
-        c.multiplicity = 3
+        c.nets = [1, 2]
+        c.multiplicity = 2
+        c.dia_inside = 2
         c.layers = ["F.Cu", "B.Cu"]
         c.Generate()
-        c.Translate(x=120, y=90)
+        # c.Translate(x=120, y=90)
         print(c.ToKiCad())
 
     if False:  # Base geometry elements
