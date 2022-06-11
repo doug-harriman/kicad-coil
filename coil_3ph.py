@@ -101,6 +101,9 @@ class Point:
 
         return f"Point(x={self.x},y={self.y})"
 
+    def __str__(self):
+        return f"({self.x:0.6f},{self.y:0.6f})"
+
     def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
         """
         Translates the Point by the given distances.
@@ -178,6 +181,9 @@ class Track:
 
         return result
 
+    def __repr__(self) -> str:
+        return f"Net:{self.net}, ID:{str(self.id)}"
+
     @property
     def net(self) -> int:
         """
@@ -207,6 +213,193 @@ class Track:
         return f"(net {self.net}) (tstamp {str(self.id)})"
 
 
+class Via(Track):
+    """
+    Via object.
+    """
+
+    def __init__(
+        self,
+        position: Point = Point(),
+        size: float = 0.8,
+        drill: float = 0.4,
+        layers: str = ["F.Cu", "B.Cu"],
+        net: int = 1,
+    ):
+        """
+        Creates a Via Track object.
+        """
+
+        super().__init__(net)
+
+        self.layers = layers
+        self.position = position
+        self.size = size
+        self.drill = drill
+
+    def __repr__(self) -> str:
+
+        s = (
+            f"Via:({self.position.x},{self.position.y}),"
+            f" Layers:{self.layers},"
+            f" {super().__repr__()}"
+        )
+
+        return s
+
+    @property
+    def position(self) -> Point:
+        """
+        Via position property getter.
+
+        Returns:
+            Point: Via center position.
+        """
+
+        return self._position
+
+    @position.setter
+    def position(self, value: Point) -> None:
+        """
+        Via center position getter.
+
+        Args:
+            value (Point): Center position.
+
+        Raises:
+            ValueError: Invalid position value type.
+        """
+
+        if not isinstance(value, Point):
+            return TypeError(f"Invalid position value type: {type(value)}")
+
+        self._position = value
+
+    @property
+    def layers(self) -> list:
+        """
+        Returns Via layer list.
+
+        Returns:
+            list: List of layer names.
+        """
+
+        return self._layers
+
+    @layers.setter
+    def layers(self, value: list = None) -> None:
+        """
+        Via layers property setter.
+
+        Args:
+            value (list): List of layer names.
+                          Note: Names are not checked for validity.
+        """
+
+        if value is None:
+            raise ValueError("No layers specified.")
+
+        if isinstance(value, str):
+            value = [value]
+
+        # Make sure all are strings
+        for v in value:
+            if not isinstance(v, str):
+                raise TypeError(f"Invalid layer value type: {type(v)}:{v}")
+
+        self._layers = value
+
+    @property
+    def size(self) -> float:
+        """
+        Via size property getter.
+
+        Returns:
+            float: Via size.
+        """
+
+        return self._size
+
+    @size.setter
+    def size(self, value: float = 0.8) -> None:
+        """
+        Via size setter.
+
+        Args:
+            value (float, optional): Via size. Defaults to 0.8.
+        """
+
+        size_orig = value
+        size = float(value)
+        if size <= 0.0:
+            raise ValueError(f"Vias size must be positive: {size_orig}")
+
+        self._size = size
+
+    @property
+    def drill(self) -> float:
+        """
+        Via drill property getter.
+
+        Returns:
+            float: Via drill.
+        """
+
+        return self._drill
+
+    @drill.setter
+    def drill(self, value: float = 0.4) -> None:
+        """
+        Via drill setter.
+
+        Args:
+            value (float, optional): Via drill. Defaults to 0.4.
+        """
+
+        drill_orig = value
+        drill = float(value)
+        if drill <= 0.0:
+            raise ValueError(f"Vias drill must be positive: {drill_orig}")
+
+        self._drill = drill
+
+    def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Translates the Via by the given distances.
+        """
+        self.position.Translate(x, y)
+
+    def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Rotates the Via about the given x,y coordinates by the given angle in radians.
+        """
+
+        self.center.Rotate(angle, x, y)
+
+    def ToKiCad(self, indent: str = "") -> str:
+        """
+        Converts Via to KiCAD string.
+        """
+
+        # Convert layer list to str
+        layerstr = ""
+        for layer in self.layers:
+            layerstr += f' "{layer}"'
+
+        s = (
+            f"{indent}"
+            f"(via "
+            f"(at {self.center.ToKiCad()}) "
+            f"(size {self.size}) "
+            f"(drill {self.drill}) "
+            f"(layers{layerstr})"
+            f"{super().ToKiCad()}"
+            f")"
+            f"{os.linesep}"
+        )
+        return s
+
+
 class Segment(Track):
     def __init__(
         self,
@@ -228,7 +421,14 @@ class Segment(Track):
         self._layer = layer
 
     def __repr__(self):
-        return self.ToKiCad()
+        s = (
+            f"Segment:"
+            f"{self._start},"
+            f"{self._end},"
+            f'Layer:"{self._layer}", '
+            f"{super().__repr__()}"
+        )
+        return s
 
     @property
     def layer(self) -> str:
@@ -373,7 +573,17 @@ class Arc(Track):
         self._layer = layer
 
     def __repr__(self):
-        return self.ToKiCad()
+
+        s = (
+            f"Arc:"
+            f"{self._center},"
+            f"Rad:{self._radius:0.3f}, "
+            f"StartAng:{self._start:0.3f}, "
+            f"EndAng:{self._end:0.3f}, "
+            f'Layer:"{self._layer}", '
+            f"{super().__repr__()}"
+        )
+        return s
 
     @property
     def layer(self) -> str:
@@ -425,6 +635,51 @@ class Arc(Track):
 
         self._width = width
 
+    @property
+    def pointstart(self) -> Point:
+        """
+        Start Point for Arc. Read only.
+
+        Returns:
+            Point: 2D start point of Arc.
+        """
+
+        pt = Point(self._radius, 0)
+        pt.Rotate(self._start)
+        pt.Translate(self._center.x, self._center.y)
+
+        return pt
+
+    @property
+    def pointmid(self) -> Point:
+        """
+        Mid Point for Arc. Read only.
+
+        Returns:
+            Point: 2D mid point of Arc.
+        """
+
+        pt = Point(self._radius, 0)
+        pt.Rotate(np.mean([self._start, self._end]))
+        pt.Translate(self._center.x, self._center.y)
+
+        return pt
+
+    @property
+    def pointend(self) -> Point:
+        """
+        End Point for Arc. Read only.
+
+        Returns:
+            Point: 2D end point of Arc.
+        """
+
+        pt = Point(self._radius, 0)
+        pt.Rotate(self._end)
+        pt.Translate(self._center.x, self._center.y)
+
+        return pt
+
     def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
         """
         Translates the Arc Track by the given distances.
@@ -455,23 +710,12 @@ class Arc(Track):
         Converts Arc to KiCAD string.
         """
 
-        pt_rad = Point(self._radius, 0)
-
-        # start  # mid  # end
-        pts = [copy.copy(pt_rad), copy.copy(pt_rad), copy.copy(pt_rad)]
-
-        angles = [self._start, np.mean([self._start, self._end]), self._end]
-
-        for i, pt in enumerate(pts):
-            pt.Rotate(angles[i])
-            pt.Translate(self._center.x, self._center.y)
-
         s = (
             f"{indent}"
             f"(arc "
-            f"(start {pts[0].ToKiCad()}) "
-            f"(mid {pts[1].ToKiCad()}) "
-            f"(end {pts[2].ToKiCad()}) "
+            f"(start {self.pointstart.ToKiCad()}) "
+            f"(mid {self.pointmid.ToKiCad()}) "
+            f"(end {self.pointend.ToKiCad()}) "
             f"(width {self._width}) "
             f'(layer "{self._layer}") '
             f"{super().ToKiCad()}"
@@ -1076,7 +1320,7 @@ class MultiPhaseCoil(Group):
         # Make sure all are strings
         for v in value:
             if not isinstance(v, str):
-                raise ValueError(f"Invalid layer value: {v}")
+                raise TypeError(f"Invalid layer value type: {type(v)}:{v}")
 
         self._layers = value
 
@@ -1163,6 +1407,12 @@ class MultiPhaseCoil(Group):
         # Create other layers.
         if len(self.layers) > 1:
             for l in self.layers:
+
+                # Create via at center of coil
+                # pos = <coil>.members[-1:][0].pointend
+                # Layers: this and previous.
+                # v = Via(position=pos)
+
                 pass
         else:
             # Only 1 layer in the group, so make that
