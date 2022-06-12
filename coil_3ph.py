@@ -32,7 +32,7 @@ from pint import UnitRegistry
 # TODO: Coil needs to capture number of turns in Generate().
 # TODO: Estimate coil trace resistance.
 #       * TraceLen implemented.
-#       * Need to capture Copper thickness/weight
+#       * Need to capture Copper thickness/weight: 35μm=1oz, 70μm=2oz, 105μm=3oz.
 # TODO: Estimate coil inductance?
 # TODO: Get Plotly plotting working again.
 # TODO: Output code for FEMM model generation.
@@ -44,6 +44,13 @@ from pint import UnitRegistry
 # TODO: Toml config files for reading coil configs.
 #       >> pip install tomli
 #       URL: https://github.com/hukkin/tomli
+# TODO: Use teardrop via to minimize annular ring size.
+#       Update SectorCoil.Generate()
+# TODO: Use rounded corners/fillets.
+#       * Radius is from the radius on the innermost coil.
+#         May be larger do to via size.
+#       * Could go back and replace all sharp corners,
+#         or add as we go.
 
 
 class Point:
@@ -1392,6 +1399,9 @@ class SectorCoil(Group):
         self._spacing = 0.2
         self._net = 1
 
+        # Calculated properties
+        self._turns = 0
+
         # Initial generation of geometry.
         self.Generate()
 
@@ -1589,6 +1599,17 @@ class SectorCoil(Group):
 
         self._angle = angle
 
+    @property
+    def turns(self) -> int:
+        """
+        Number of turns in coil.
+
+        Returns:
+            int: Number of turns.
+        """
+
+        return self._turns
+
     def Generate(self):
         """
         Generates coil geometry segments.
@@ -1597,111 +1618,126 @@ class SectorCoil(Group):
 
         """
 
+        def arc_interect(radius: float, coordinate: float) -> float:
+            """
+            Determines the intersection point between a line
+            and an arc.  Assuming:
+            * Full first quadrante arc (0-90 deg)
+            * Horizontal or vertical line interection only.
+            * Symmetric problem, so given one coordinate,
+              calculates the other.
+
+            Args:
+                radius (float): Radius of arc.
+                coordinate (float): X coord for vertical line, y for horizontal.
+
+            Returns:
+                float: other coordinate for intersection point.
+            """
+
+            # Assume this is a horizontal line and we've been
+            # given the Y-coordinate of the point.  The angle
+            # of the intersection point is:
+            theta = np.arcsin(coordinate / radius)
+
+            # Then the other point is:
+            return radius * np.cos(theta)
+
+        # Since we use the AddMember method, need to clear out.
         self._members = []
-
-        def angle_change(radius):
-            """
-            Calculates the change in angle based on current OD
-            and track geometry.
-            """
-
-            # Effective arc length based on track geometry
-            len_arc = self._spacing + self._width
-            len_arc *= np.pi / 2
-
-            # Angle to get that arc at the current radius
-            theta = len_arc / radius
-
-            return theta
+        self._turns = 0
 
         # OD is started outside of coil.
         # First loop will have outside edge on the OD
-        rad_out = self._dia_outside / 2 + self._width / 2
+        rad_out = self._dia_outside / 2 + 1.5 * self._width
         rad_pitch = self._width + self._spacing
 
+        # Potenital radii
+        # TODO: Rework with middle dia supporting min via dia.
         radii = np.arange(rad_out, 0, -rad_pitch)
+
+        # Must be greater than inside radius
         radii = radii[np.where(radii > self._dia_inside / 2)]
 
-        angles = np.array([[0, self._angle - angle_change(radii[0])]])
-        for i, radius in enumerate(radii):
-            if i == 0:
-                continue
+        # Must be odd (for coil center via)
+        if len(radii) % 2 == 0:
+            radii = radii[:-1]
 
-            delta = angle_change(radius)
-            angles_new = angles[i - 1, :] + np.array([1, -1]) * delta
-
-            angles = np.vstack((angles, angles_new))
-
-        # At some the radius gets too small, and lines may start crossing.
-        # Keep the sector angle > 0
-        da = np.diff(angles)
-        idx = np.where(da > 0)[0]
-
-        # Generate list of angles to process through
-        radii = radii[idx]
-        angles = angles[idx, :]
-        angles = angles.flatten()
-
-        # Generate list of radii to process through
+        # Reorder radii so we process outside->inside->outide, etc
         r = np.zeros((len(radii) * 2,))
-        r[1::2] = radii
-        r[::2] = np.flip(radii)
+        r[::2] = radii
+        r[1::2] = np.flip(radii)
         r = r[: int(len(r) / 2)]
+        radii = r
 
-        self._turns = 0
+        # Offset each line by a delta position based on spacing & track size
+        dp = self._width + self._spacing
 
-        # First segment is the entry segment from the connection trace.
+        # Create a first horizontal line.
+        offset = 0.0
+        create_vertical = True
+        seg_start = Point(arc_interect(radius=radii[0], coordinate=offset), offset)
+        seg_end = Point(arc_interect(radius=radii[1], coordinate=offset), offset)
         seg = Segment(
-            Point(rad_out + self._width + self._spacing, 0),
-            Point(r[0], 0),
-            width=self._width,
+            start=seg_start,
+            end=seg_end,
+            width=self.width,
             layer=self.layer,
             net=self.net,
         )
         self.AddMember(seg)
+        offset += dp
 
-        i = 0
-        while i + 1 < len(r):
+        # For Each pair of radii (0,1),(2,3) ...
+        # intersect at one line parallel to the horizontal axis.
+        # Step through those, calculating intersection points.
+        intersect_coord = np.zeros(len(radii))
+        for i in range(2, len(radii)):
 
-            # Arc
+            # Calc start point for next segment.
+            intersect_start = arc_interect(radius=radii[i - 1], coordinate=offset)
+            intersect_end = arc_interect(radius=radii[i], coordinate=offset)
+
+            if create_vertical:
+                seg_start = Point(offset, intersect_start)
+            else:
+                seg_start = Point(intersect_start, offset)
+
+            # Arc links previous end point to new starting point.
             arc = Arc(
-                center=Point(0, 0),
-                radius=r[i],
-                start=angles[i],
-                end=angles[i + 1],
-                width=self._width,
+                center=Point(),  # During generation, center always at (0,0)
+                radius=radii[i - 1],
+                start=np.arctan2(
+                    seg_end.y, seg_end.x
+                ),  # Angle to horizontal line end point.
+                end=np.arctan2(
+                    seg_start.y, seg_start.x
+                ),  # Angle to vertical line start point
+                width=self.width,
                 layer=self.layer,
                 net=self.net,
             )
             self.AddMember(arc)
 
-            # Line
+            # Calc end point for next segment.
+            if create_vertical:
+                seg_end = Point(offset, intersect_end)
+            else:
+                seg_end = Point(intersect_end, offset)
+                offset += dp  # Update offset every other time
+
+            # Toggle
+            create_vertical = not create_vertical
+
+            # Segment
             seg = Segment(
-                Point(r[i] * np.cos(angles[i + 1]), r[i] * np.sin(angles[i + 1])),
-                Point(
-                    r[i + 1] * np.cos(angles[i + 1]), r[i + 1] * np.sin(angles[i + 1])
-                ),
-                width=self._width,
+                start=seg_start,
+                end=seg_end,
+                width=self.width,
                 layer=self.layer,
                 net=self.net,
             )
             self.AddMember(seg)
-
-            i += 1
-
-        # Line to center of coil for via
-        angle_1 = angles[i]
-        angle_2 = angles[i : i + 2].mean()
-        arc = Arc(
-            center=Point(0, 0),
-            radius=r[i],
-            start=angle_1,
-            end=angle_2,
-            width=self._width,
-            layer=self.layer,
-            net=self.net,
-        )
-        self.AddMember(arc)
 
         # Reprocess geometry adding center offsets.
         self.Translate(self._center.x, self._center.y)
@@ -2049,8 +2085,14 @@ class MultiPhaseCoil(Group):
 #%%
 if __name__ == "__main__":
 
+    # Simple SectorCoil
     if True:
-        # Three phase test
+        c = SectorCoil()
+        c.Generate()
+        print(c.ToKiCad())
+
+    if False:
+        # Two phase test
         c = MultiPhaseCoil()
         c.nets = [1, 2]
         c.multiplicity = 2
