@@ -1404,9 +1404,6 @@ class SectorCoil(Group):
         # Calculated properties
         self._turns = 0
 
-        # Initial generation of geometry.
-        self.Generate()
-
     @property
     def layer(self) -> str:
         """
@@ -1620,6 +1617,12 @@ class SectorCoil(Group):
 
         """
 
+        # Error checks
+        if self.dia_inside >= self.dia_outside:
+            raise ValueError(
+                f"Inside dia >= outside dia: {self.dia_inside} >= {self.dia_outside}"
+            )
+
         def arc_interect(radius: float, coordinate: float) -> float:
             """
             Determines the intersection point between a line
@@ -1690,6 +1693,11 @@ class SectorCoil(Group):
         self.AddMember(seg)
         offset += dp
 
+        # Basic sector coil creation is for a 90 deg sector.
+        # For other angles, create the points, then rotate.
+        rotation_needed = not np.isclose(self.angle, np.pi / 2)
+        rotation_theta = self.angle - np.pi / 2
+
         # For Each pair of radii (0,1),(2,3) ...
         # intersect at one line parallel to the horizontal axis.
         # Step through those, calculating intersection points.
@@ -1702,6 +1710,10 @@ class SectorCoil(Group):
 
             if create_vertical:
                 seg_start = Point(offset, intersect_start)
+
+                # Rotate segment point if needed.
+                if rotation_needed:
+                    seg_start.Rotate(rotation_theta)
 
                 # Every vertical maps to a turn.
                 self._turns += 1
@@ -1727,6 +1739,11 @@ class SectorCoil(Group):
             # Calc end point for next segment.
             if create_vertical:
                 seg_end = Point(offset, intersect_end)
+
+                # Rotate segment point if needed.
+                if rotation_needed:
+                    seg_end.Rotate(rotation_theta)
+
             else:
                 seg_end = Point(intersect_end, offset)
                 offset += dp  # Update offset every other time
@@ -2186,7 +2203,10 @@ if __name__ == "__main__":
         c.spacing = spacing
         c.angle = 120 * np.pi / 180
         c.dia_inside = 5
-        c.dia_inside = 20
+        c.dia_outside = 20
+
+        c.Generate()
+        print(c.ToKiCad())
 
     # Base geometry elements
     if False:
