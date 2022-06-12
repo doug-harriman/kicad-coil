@@ -23,6 +23,8 @@ from pint import UnitRegistry
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
+# TODO: Update sector coil to rotate points for non-90 deg sectors.
+# TODO: Add termination criteria on short arcs -> indicates inner coil too small.
 # TODO: Add optional mounting holes: count & radius
 # Video link to custom hole geometries:
 # URL: https://youtu.be/5Be7XOMmPQE?t=1592
@@ -1700,6 +1702,9 @@ class SectorCoil(Group):
 
             if create_vertical:
                 seg_start = Point(offset, intersect_start)
+
+                # Every vertical maps to a turn.
+                self._turns += 1
             else:
                 seg_start = Point(intersect_start, offset)
 
@@ -1739,6 +1744,18 @@ class SectorCoil(Group):
             )
             self.AddMember(seg)
 
+        # Add in last half arc.
+        arc = Arc(
+            center=Point(),  # During generation, center always at (0,0)
+            radius=radii[-1],
+            start=np.arctan2(seg_end.y, seg_end.x),  # Last end point.
+            end=self._angle / 2,
+            width=self.width,
+            layer=self.layer,
+            net=self.net,
+        )
+        self.AddMember(arc)
+
         # Reprocess geometry adding center offsets.
         self.Translate(self._center.x, self._center.y)
 
@@ -1765,6 +1782,8 @@ class MultiPhaseCoil(Group):
         # We'll treat this like a pseudo-base class and store
         # coil parameters directly into the coil.
         self._coil = SectorCoil()
+
+        self._via = Via()
 
     @property
     def layers(self) -> list:
@@ -1955,6 +1974,37 @@ class MultiPhaseCoil(Group):
 
         self._coil._dia_inside = value
 
+    @property
+    def via(self) -> Via:
+        """
+        Returns the default via for the coil.
+        Added vias will be made as copies of this via.
+
+        Returns:
+            Via: Default via.
+        """
+
+        return self._via
+
+    @via.setter
+    def via(self, value: Via):
+        """
+        Via property setter.
+        All vias added will be copied from this via.
+        Must be set before Geometry generation.
+
+        Args:
+            value (Via): _description_
+        """
+
+        if not isinstance(value, Via):
+            raise TypeError(f"Expecting object of type Via. Got: {type(value)}")
+
+        # TODO: Search all generated geometry and replace with new via type.
+        #      Update documentation block.
+
+        self._via = value
+
     def Generate(self):
         """
         Generates multi-phase coil geometry.
@@ -2067,12 +2117,13 @@ class MultiPhaseCoil(Group):
                     # Via position is at the end of the last,
                     # half arc in the coil
                     arcs = [a for a in coil.members if isinstance(a, Arc)]
-                    pos = arcs[-1:][0].pointstart
+                    pos = arcs[-1].pointstart
 
-                    # Via layers are this layer and previous.
-                    layers = [self.layers[i_layer - 1], layer]
-
-                    v = Via(position=pos, layers=layers, net=coil.net)
+                    # Create a copy of the base via
+                    v = copy.deepcopy(self._via)
+                    v.position = pos
+                    v.layers = [self.layers[i_layer - 1], layer]
+                    v.net = coil.net
 
                     self.AddMember(v)
 
@@ -2085,24 +2136,60 @@ class MultiPhaseCoil(Group):
 #%%
 if __name__ == "__main__":
 
-    # Simple SectorCoil
-    if True:
-        c = SectorCoil()
+    from pint import Quantity as Q
+
+    # Parameters
+    # Base via
+    drill = 0.3
+    via_size = 0.61
+    via = Via(size=via_size, drill=drill)
+
+    # Tracks
+    width = via_size  # Match via size
+    spacing = Q(6e-3, "in").to("mm").magnitude  # PCBWay min spacing for cheap boards
+
+    # 3-phase test, multiplicity 1
+    if False:
+        c = MultiPhaseCoil()
+        c.nets = [1, 2, 3]
+        c.multiplicity = 1
+        c.dia_inside = 5
+        c.layers = ["F.Cu", "B.Cu"]
+        c.width = width
+        c.spacing = spacing
+        c.via = via
+
         c.Generate()
+        c.Translate(x=120, y=90)
         print(c.ToKiCad())
 
+    # 2-phase test, multiplicity 2
     if False:
-        # Two phase test
         c = MultiPhaseCoil()
         c.nets = [1, 2]
         c.multiplicity = 2
-        c.dia_inside = 2
+        c.dia_inside = 5
+        c.dia_outside = 20
         c.layers = ["F.Cu", "B.Cu"]
+        c.width = width
+        c.spacing = spacing
+        c.via = via
+
         c.Generate()
-        # c.Translate(x=120, y=90)
+        c.Translate(x=120, y=90)
         print(c.ToKiCad())
 
-    if False:  # Base geometry elements
+    # Sector coil test
+    if True:
+        c = SectorCoil()
+        c.width = width
+        c.spacing = spacing
+        c.angle = 120 * np.pi / 180
+        c.dia_inside = 5
+        c.dia_inside = 20
+
+    # Base geometry elements
+    if False:
         seg = Segment(Point(0, 0), Point(10, 10), width=0.25)
         seg.Translate(2, 3)
         print(seg.ToKiCad())
@@ -2111,69 +2198,5 @@ if __name__ == "__main__":
         arc.Rotate(np.pi / 2)
         print(arc.ToKiCad())
 
-    # 4-quadrant coils.
-    if False:
-        g = Group(name="Quadrants")
 
-        c1 = SectorCoil()
-        c1.name = "SE"
-        c1.Generate()
-        # c.Translate(100, 80)
-        g.AddMember(c1)
-
-        angles = [(1, "NE"), (2, "NW"), (3, "SW")]
-        for angle in angles:
-            rot = angle[0] * -np.pi / 2
-
-            c = copy.deepcopy(c1)
-            c.name = angle[1]
-            c.net = angle[0] + 1
-            c.Rotate(rot)
-            g.AddMember(c)
-
-        # c2 = SectorCoil()
-        # c2.name = "NE"
-        # c2.Generate()
-        # c2.Rotate(-np.pi / 2)
-        # g.AddMember(c2)
-        g.Translate(120, 85)
-
-        s = g.ToKiCad()
-
-        print(s)
-
-    # Coil flip test.
-    if False:
-        g = Group("Flip Test")
-
-        c1 = SectorCoil()
-        c1.name = "Top"
-        c1.Generate()
-        g.AddMember(c1)
-
-        c2 = copy.deepcopy(c1)
-        c2.name = "Bottom"
-        c2.layer = "B.Cu"
-        c2.ChangeSideFlip()
-        c2.Generate()
-        g.AddMember(c2)
-
-        s = g.ToKiCad()
-        print(s)
-
-    # fn = "coil.config"
-    # coil = Coil3Ph(cfgfile=fn)
-
-    if False:  # 3phase coil
-        coil = Coil3Ph()
-        coil._replication = 1
-        coil._od = 20
-        coil._id = 4
-        coil._width = 0.25
-        coil._spacing = 0.25
-        coil._layers = ["F.Cu"]
-        coil._center = Point(120, 120)
-
-        coil.GenerateGeo()
-        # coil.Plot()
-        coil.ToKiCad(to_stdout=True)
+# %%
