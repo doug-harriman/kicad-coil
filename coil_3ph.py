@@ -7,14 +7,14 @@
 
 
 import copy
+import logging
 import os
+import sys
 import uuid
 import warnings
 from typing import Tuple
 
 import numpy as np
-import plotly.graph_objects as go
-from pint import UnitRegistry
 
 # KiCAD Python
 # pip install kicad_python
@@ -23,8 +23,10 @@ from pint import UnitRegistry
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# TODO: Update sector coil to rotate points for non-90 deg sectors.
-# TODO: Add termination criteria on short arcs -> indicates inner coil too small.
+# TODO: For inner_arc=false,
+#       Need to determine intersection point and update end points to that.
+# TODO: Add termination criteria for sector tight condition
+#       Theory: line interectdion point radius + spacing + via dia >= outer arc radius
 # TODO: Add optional mounting holes: count & radius
 # Video link to custom hole geometries:
 # URL: https://youtu.be/5Be7XOMmPQE?t=1592
@@ -53,6 +55,10 @@ from pint import UnitRegistry
 #         May be larger do to via size.
 #       * Could go back and replace all sharp corners,
 #         or add as we go.
+
+# Logging configuration
+# Logging to STDOUT
+# logging.basicConfig(stream=sys.stdout, filemode="w", level=logging.DEBUG)
 
 
 class Point:
@@ -473,7 +479,7 @@ class Segment(Track):
         """
         return self._end
 
-    @start.setter
+    @end.setter
     def end(self, value: Point = None) -> None:
         """
         Segment end point property setter.
@@ -1852,6 +1858,8 @@ class SectorCoil(Group):
 
         """
 
+        logging.debug("SC_ARC:\tType,\tRadius,\tAngle,\t  dX,\t  dY,\t")
+
         # Error checks
         if self.dia_inside >= self.dia_outside:
             raise ValueError(
@@ -1862,10 +1870,11 @@ class SectorCoil(Group):
             """
             Determines the intersection point between a line
             and an arc.  Assuming:
-            * Full first quadrante arc (0-90 deg)
-            * Horizontal or vertical line interection only.
+            * Full first quadrant arc (0-90 deg)
+            * Horizontal or vertical lines only.
             * Symmetric problem, so given one coordinate,
               calculates the other.
+            * Starting with horizontal line, coming in from outside connection point.
 
             Args:
                 radius (float): Radius of arc.
@@ -1886,6 +1895,7 @@ class SectorCoil(Group):
         # Since we use the AddMember method, need to clear out.
         self._members = []
         self._turns = 0
+        inner_arc = True  # Denotes if we have room for inner arc
 
         # OD is started outside of coil.
         # First loop will have outside edge on the OD
@@ -1934,7 +1944,7 @@ class SectorCoil(Group):
         rotation_theta = self.angle - np.pi / 2
 
         # For Each pair of radii (0,1),(2,3) ...
-        # intersect at one line parallel to the horizontal axis.
+        # intersect one line parallel to the horizontal axis.
         # Step through those, calculating intersection points.
         intersect_coord = np.zeros(len(radii))
         for i in range(2, len(radii)):
@@ -1956,20 +1966,61 @@ class SectorCoil(Group):
                 seg_start = Point(intersect_start, offset)
 
             # Arc links previous end point to new starting point.
-            arc = Arc(
-                center=Point(),  # During generation, center always at (0,0)
-                radius=radii[i - 1],
-                start=np.arctan2(
-                    seg_end.y, seg_end.x
-                ),  # Angle to horizontal line end point.
-                end=np.arctan2(
-                    seg_start.y, seg_start.x
-                ),  # Angle to vertical line start point
-                width=self.width,
-                layer=self.layer,
-                net=self.net,
-            )
-            self.AddMember(arc)
+            # Angle to horizontal line end point.
+            angle_start = np.arctan2(seg_end.y, seg_end.x)
+
+            # Angle to vertical line start point
+            angle_end = np.arctan2(seg_start.y, seg_start.x)
+
+            dA = angle_start - angle_end
+
+            # If angle is positive for an inside arc, then the lines cross
+            # and we don't want the arc.
+            # An inside arc is one created when create_vertical = true
+            arc = None
+            if create_vertical:
+                log_txt = "in"
+
+                if dA > 0:
+                    # Denote that things are tight for inner arc.
+                    inner_arc = False
+
+                if inner_arc:
+                    arc = Arc(
+                        center=Point(),  # During generation, center always at (0,0)
+                        radius=radii[i - 1],
+                        start=angle_start,
+                        end=angle_end,
+                        width=self.width,
+                        layer=self.layer,
+                        net=self.net,
+                    )
+                    self.AddMember(arc)
+
+            else:
+                # Always create outside arcs.
+                log_txt = "out"
+                arc = Arc(
+                    center=Point(),  # During generation, center always at (0,0)
+                    radius=radii[i - 1],
+                    start=angle_start,
+                    end=angle_end,
+                    width=self.width,
+                    layer=self.layer,
+                    net=self.net,
+                )
+                self.AddMember(arc)
+
+            # Debug logging
+            if arc is not None:
+                logging.debug(
+                    f"SC_ARC:\t"
+                    f"{log_txt},\t"
+                    f"{arc.radius:02.3f},\t"
+                    f"{arc.start-arc.end: .2f},\t"
+                    f"{arc.pointstart.x-arc.pointend.x: .3f},\t"
+                    f"{arc.pointstart.y-arc.pointend.y: .3f},"
+                )
 
             # Calc end point for next segment.
             if create_vertical:
@@ -2588,7 +2639,7 @@ if __name__ == "__main__":
         print(c.ToKiCad())
 
     # 3-phase test, multiplicity 2
-    if True:
+    if False:
         c = MultiPhaseCoil()
         c.nets = [1, 2, 3]
         c.multiplicity = 2
@@ -2627,13 +2678,13 @@ if __name__ == "__main__":
         print(c.ToKiCad())
 
     # Sector coil test
-    if False:
+    if True:
         c = SectorCoil()
         c.width = width
         c.spacing = spacing
-        c.angle = 120 * np.pi / 180
-        c.dia_inside = 5
-        c.dia_outside = 20
+        c.angle = 60 * np.pi / 180
+        c.dia_inside = 6
+        c.dia_outside = 30
 
         c.Generate()
         print(c.ToKiCad())
