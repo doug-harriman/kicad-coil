@@ -1194,6 +1194,241 @@ class GrText:
         return s
 
 
+class GrCircle:
+    """
+    Circle graphics object.
+    Defined as center and a point on the circumference.
+    """
+
+    def __init__(
+        self,
+        position: Point = None,
+        diameter: float = 5.0,
+        width: float = 0.1,
+        layer: str = "F.SilkS",
+    ):
+
+        self._id = uuid.uuid4()
+        if position is None:
+            self.position = Point()
+        else:
+            self.position = position
+        self.layer = layer
+        self.diameter = diameter
+        self.width = width
+
+    def __deepcopy__(self, memo):
+        """
+        Deep copy of GrCircle class with new UUIO.
+        """
+
+        # Per:
+        # https://stackoverflow.com/questions/57181829/deepcopy-override-clarification
+
+        from copy import deepcopy
+
+        cls = self.__class__  # Extract the class of the object
+        # Create a new instance of the object based on extracted class
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+
+            # Copy over attributes by copying directly or in case of complex
+            # objects like lists for exaample calling the `__deepcopy()__`
+            # method defined by them. Thus recursively copying the whole tree
+            # of objects.
+            setattr(result, k, deepcopy(v, memo))
+
+        result._id = uuid.uuid4()
+
+        return result
+
+    def __str__(self) -> str:
+
+        return self.text
+
+    def __repr__(self) -> str:
+
+        s = (
+            f"GrCircle:{self.position}, "
+            f"Dia:{self.diameter:0.3f}, "
+            f'Layer:"{self.layer}", '
+            f"ID:{str(self.id)}"
+        )
+
+        return s
+
+    @property
+    def id(self) -> uuid:
+        """
+        Returns the UUID of the GrCircle.
+        """
+        return self._id
+
+    @property
+    def position(self) -> Point:
+        """
+        GrCircle position property getter.
+
+        Returns:
+            Point: GrCircle center position.
+        """
+
+        return self._position
+
+    @position.setter
+    def position(self, value: Point = Point()) -> None:
+        """
+        GrCircle center position getter.
+
+        Args:
+            value (Point): Center position.
+
+        Raises:
+            ValueError: Invalid position value type.
+        """
+
+        if not isinstance(value, Point):
+            return TypeError(f"Invalid position value type: {type(value)}")
+
+        self._position = value
+
+    @property
+    def diameter(self) -> float:
+        """
+        GrCircle diameter property getter.
+
+        Returns:
+            float: circle diameter
+        """
+
+        return self._diameter
+
+    @diameter.setter
+    def diameter(self, value: float = 5):
+        """
+        GrCircle angle getter.
+
+        Args:
+            value (float, optional): GrCircle diameter. Defaults to 5.
+        """
+
+        angle = float(value)
+        self._diameter = angle
+
+    @property
+    def radius(self) -> float:
+        """
+        Returns GrCircle radius.
+
+        Returns:
+            float: GrCircle radius.
+        """
+
+        return self.diameter / 2
+
+    @radius.setter
+    def radius(self, value: float) -> None:
+        """
+        Sets GrCircle radius.
+
+        Args:
+            value (float): radius.
+        """
+
+        self.diameter = value * 2
+
+    @property
+    def layer(self) -> str:
+        """
+        Returns layer for GrCircle.
+
+        Returns:
+            str: Layer
+        """
+
+        return self._layer
+
+    @layer.setter
+    def layer(self, value: str = "F.SilkS"):
+        """
+        Sets layer for GrCircle.
+
+        Args:
+            value (str, optional): Layer name. Defaults to 'F.SilkS'.
+        """
+
+        value = str(value)
+        self._layer = value
+
+    @property
+    def width(self) -> float:
+        """
+        GrCircle line width.
+
+        Returns:
+            float: GrCircle width.
+        """
+
+        return self._width
+
+    @width.setter
+    def width(self, value: float = 0.1) -> None:
+        """
+        GrCircle line width setter.
+
+        Args:
+            value (float, optional): GrCircle line width.  Defaults to 0.1.
+        """
+
+        size_orig = value
+        size = float(value)
+        if size <= 0.0:
+            raise ValueError(f"GrCircle line width must be positive: {size_orig}")
+
+        self._width = size
+
+    def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Translates the GrText by the given distances.
+        """
+        self.position.Translate(x, y)
+
+    def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
+        """
+        Rotates the GrCircle about the given x,y coordinates by the given angle in radians.
+        """
+
+        # This is a no-op for a circle.
+        # Provided so that calls do not error out.
+        pass
+
+    def ChangeSideFlip(self):
+        """
+        Flips circle for placing on opposite side.
+        """
+
+        # This is a no-op for a circle.
+        # Provided so that calls do not error out.
+        pass
+
+    def ToKiCad(self, indent: str = "") -> str:
+        """
+        Converts GrText to KiCAD string.
+        """
+
+        s = (
+            f"{indent}"
+            f"(gr_circle  "
+            f"(center {self.position.ToKiCad()}) "
+            f"(end {self.position.x+self.diameter/2:0.6f} {self.position.y:0.6f}) "
+            f'(layer "{self._layer}") '
+            f"(tstamp {str(self.id)}) )"
+            f"{os.linesep}"
+        )
+        return s
+
+
 class Group:
     def __init__(self, members: list = None, name: str = ""):
         """
@@ -1799,8 +2034,13 @@ class MultiPhaseCoil(Group):
         # We'll treat this like a pseudo-base class and store
         # coil parameters directly into the coil.
         self._coil = SectorCoil()
-
         self._via = Via()
+
+        # Holes
+        self._center_hole = None
+        self._mount_hole = None
+        self._mount_hole_pattern_diameter = 15
+        self._mount_hole_pattern_angles = np.array([0, 120, 240]) * np.pi / 180
 
     @property
     def layers(self) -> list:
@@ -2022,6 +2262,134 @@ class MultiPhaseCoil(Group):
 
         self._via = value
 
+    @property
+    def center_hole(self) -> GrCircle:
+        """
+        GrCircle to define center hole to cut.
+        If None, then no center hole.
+
+        Returns:
+            GrCircle: Center hole circle.
+        """
+
+        return self._center_hole
+
+    @center_hole.setter
+    def center_hole(self, value: GrCircle) -> None:
+        """
+        GrCircle center for center hole.
+        If None, then no center hole.
+
+        Args:
+            value (GrCircle): Center hole definition.
+        """
+
+        if value is None:
+            self._center_hole = value
+            return
+
+        if not isinstance(value, GrCircle):
+            raise TypeError(f"Type GrCircle expected, got: {type(value)}")
+
+        self._center_hole = copy.deepcopy(value)
+        self._center_hole.position = Point()  # Always at center
+        self._center_hole.layer = "Edge.Cuts"
+        self._center_hole.width = 0.1
+
+    @property
+    def mount_hole(self) -> GrCircle:
+        """
+        GrCircle to define mount hole to cut.
+        If None, then no mount hole.
+
+        Returns:
+            GrCircle: mount hole circle.
+        """
+
+        return self._mount_hole
+
+    @mount_hole.setter
+    def mount_hole(self, value: GrCircle) -> None:
+        """
+        GrCircle mount for mount hole.
+        If None, then no mount hole.
+
+        Args:
+            value (GrCircle): mount hole definition.
+        """
+
+        if value is None:
+            self._mount_hole = value
+            return
+
+        if not isinstance(value, GrCircle):
+            raise TypeError(f"Type GrCircle expected, got: {type(value)}")
+
+        self._mount_hole = copy.deepcopy(value)
+        self._mount_hole.layer = "Edge.Cuts"
+        self._mount_hole.width = 0.1
+
+    @property
+    def mount_hole_pattern_diameter(self) -> float:
+        """
+        Mounting hold radial placement pattern diameter.
+
+        Returns:
+            Float: Diameter to center of holes.
+        """
+
+        return self._mount_hole_pattern_diameter
+
+    @mount_hole_pattern_diameter.setter
+    def mount_hole_pattern_diameter(self, value: float) -> None:
+        """
+        Mounting hold radial placement pattern diameter.
+        Pattern diameter - hole radius > coil outside diameter.
+
+        Args:
+            value (float): Mounting hole radial pattern diameter.
+        """
+
+        value = float(value)
+        if value <= 0:
+            raise ValueError(f"Mounting hole pattern diameteter must be >0: {value}")
+
+        self._mount_hole_pattern_diameter = value
+
+    @property
+    def mount_hole_pattern_angles(self) -> list:
+        """
+        List of angles at which to place mounting holes.
+        Angle in radians.
+
+        Returns:
+            list: List of angles for mounting holes.
+        """
+
+        return self._mount_hole_pattern_angles
+
+    @mount_hole_pattern_angles.setter
+    def mount_hole_pattern_angles(self, value: list) -> None:
+        """
+        List of angles at which to place mounting holes.
+        Angle in radians.
+
+        Args:
+            value (list): List of angles.
+        """
+
+        if isinstance(value, float):
+            value = list(value)
+
+        # Check all values.
+        for v in value:
+            if isinstance(v, int):
+                v = float(v)
+            if not isinstance(v, float):
+                raise TypeError(f"Angle list contains non-float value: {v}")
+
+        self._mount_hole_pattern_angles = value
+
     def Generate(self):
         """
         Generates multi-phase coil geometry.
@@ -2035,6 +2403,22 @@ class MultiPhaseCoil(Group):
         * multiplicity - Replicates the phases in the coil.
 
         """
+
+        # Error checks
+        if self.center_hole is not None:
+            if self.center_hole.diameter >= self.dia_inside:
+                raise ValueError(
+                    f"Center hole dia >= coil inner dia: {self.center_hole.diameter } >= {self.dia_inside}"
+                )
+
+        if self.mount_hole is not None:
+            if (
+                self.mount_hole_pattern_diameter - self.mount_hole.diameter / 2
+                <= self.dia_outside
+            ):
+                raise ValueError(
+                    f"Mounting holes touch coil.  Increase mounting hole pattern diameter."
+                )
 
         # Clear out existing geometry.
         self._members = []
@@ -2149,6 +2533,21 @@ class MultiPhaseCoil(Group):
             # This avoids having an additional, unneeded level of grouping.
             self._members = layer_g._members
 
+        # Center hole
+        if self.center_hole is not None:
+            self.AddMember(self.center_hole)
+
+        # Mounting holes
+        if self.mount_hole is not None:
+            g = Group(name="Mounting Holes")
+            r = self.mount_hole_pattern_diameter / 2
+            for angle in self.mount_hole_pattern_angles:
+                hole = copy.deepcopy(self.mount_hole)
+                hole.position.x = r * np.cos(angle)
+                hole.position.y = r * np.sin(angle)
+                g.AddMember(hole)
+            self.AddMember(g)
+
 
 #%%
 if __name__ == "__main__":
@@ -2171,13 +2570,44 @@ if __name__ == "__main__":
         c.nets = [1, 2, 3]
         c.multiplicity = 1
         c.dia_inside = 5
+        c.dia_outside = 20
         c.layers = ["F.Cu", "B.Cu"]
         c.width = width
         c.spacing = spacing
         c.via = via
 
+        # Center hole
+        hole = GrCircle(Point(), diameter=3)
+        # c.center_hole = hole
+        c.mount_hole = hole
+        c.mount_hole_pattern_diameter = c.dia_outside + hole.radius + 4
+        c.mount_hole_pattern_angles = (np.array([0, 120, 240]) + 30) * np.pi / 180
+
         c.Generate()
         c.Translate(x=120, y=90)
+        print(c.ToKiCad())
+
+    # 3-phase test, multiplicity 2
+    if True:
+        c = MultiPhaseCoil()
+        c.nets = [1, 2, 3]
+        c.multiplicity = 2
+        c.dia_inside = 6
+        c.dia_outside = 30
+        c.layers = ["F.Cu", "B.Cu"]
+        c.width = width
+        c.spacing = spacing
+        c.via = via
+
+        # Center hole
+        hole = GrCircle(Point(), diameter=3)
+        # c.center_hole = hole
+        c.mount_hole = hole
+        c.mount_hole_pattern_diameter = c.dia_outside + hole.radius + 4
+        c.mount_hole_pattern_angles = (np.array([0, 120, 240]) + 30) * np.pi / 180
+
+        c.Generate()
+        # c.Translate(x=120, y=90)
         print(c.ToKiCad())
 
     # 2-phase test, multiplicity 2
@@ -2197,7 +2627,7 @@ if __name__ == "__main__":
         print(c.ToKiCad())
 
     # Sector coil test
-    if True:
+    if False:
         c = SectorCoil()
         c.width = width
         c.spacing = spacing
