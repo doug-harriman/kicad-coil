@@ -1673,6 +1673,7 @@ class SectorCoil(Group):
 
         self._dia_outside = 20
         self._dia_inside = 5
+        self._dia_via = 0.8
         self._center = Point()
         self._angle = np.pi / 2
 
@@ -1879,6 +1880,34 @@ class SectorCoil(Group):
         self._angle = angle
 
     @property
+    def dia_via(self) -> float:
+        """
+        Returns via diameter for center of coil.
+        Used to determine innermost coil size.
+
+        Returns:
+            float: Via diameter.
+        """
+
+        return self._dia_via
+
+    @dia_via.setter
+    def dia_via(self, value: float = 0.8) -> None:
+        """
+        Sets via diameter to use to determine size of innermost coil.
+
+        Args:
+            value (float, optional): Via diameter. Defaults to 0.8.
+        """
+
+        value_orig = value
+        value = float(value)
+        if value <= 0.0:
+            raise ValueError(f"Via diameter must be >0: {value_orig}")
+
+        self._dia_via = value
+
+    @property
     def turns(self) -> int:
         """
         Number of turns in coil.
@@ -1960,7 +1989,13 @@ class SectorCoil(Group):
         radii = r
 
         # Offset each line by a delta position based on spacing & track size
-        dp = self._width + self._spacing
+        dp = self.width + self.spacing
+
+        # Minimal radial distance needed to fit via
+        # 1.25 is a hueristic for estimating the effective thickness increase
+        # in the inner corner of two lines intersecting.
+        # An exact value could be calculated based on line thicknesses however.
+        radial_dist_min = self.dia_via + 2 * self.spacing + self.width * 1.25
 
         # Create a first horizontal line.
         offset = 0.0
@@ -2050,6 +2085,15 @@ class SectorCoil(Group):
                 )
                 self.AddMember(arc)
 
+                # If we're not adding inner arcs, then check for
+                # termination due to inner coil size getting small.
+                if not inner_arc:
+                    radius_last_intersect = np.sqrt(seg.start.x**2 + seg.start.y**2)
+                    radial_dist_left = arc.radius - radius_last_intersect
+                    if radial_dist_left < 2 * radial_dist_min:
+                        # Terminate coil generation
+                        break
+
             # Debug logging
             if arc is not None:
                 logging.debug(
@@ -2090,23 +2134,44 @@ class SectorCoil(Group):
             if create_vertical and not inner_arc:
                 intersect = seg.IntersectionLine(seg_prev)
 
-                seg_prev.end = intersect
-                seg.start = intersect
+                seg_prev.end = copy.deepcopy(intersect)
+                seg.start = copy.deepcopy(intersect)
 
             # Toggle
             create_vertical = not create_vertical
 
-        # Add in last half arc.
-        arc = Arc(
-            center=Point(),  # During generation, center always at (0,0)
-            radius=radii[-1],
-            start=np.arctan2(seg_end.y, seg_end.x),  # Last end point.
-            end=self._angle / 2,
-            width=self.width,
-            layer=self.layer,
-            net=self.net,
-        )
-        self.AddMember(arc)
+        # Add in last half arc if we were adding inner arcs.
+        if inner_arc:
+            arc = Arc(
+                center=Point(),  # During generation, center always at (0,0)
+                radius=radii[-1],
+                start=np.arctan2(seg_end.y, seg_end.x),  # Last end point.
+                end=self._angle / 2,
+                width=self.width,
+                layer=self.layer,
+                net=self.net,
+            )
+            self.AddMember(arc)
+        else:
+            # Approximation of middle if remaining triangle.
+            # Centroid of triangle is 1/3 above base.
+            r = radius_last_intersect + 2 * radial_dist_left / 3
+
+            # Angle is offset slightly from sector angle.
+            # Use angle to last intesect point.
+            th = np.arctan2(intersect.y, intersect.x)
+
+            # Point for the via.
+            pt_via = Point(r * np.cos(th), r * np.sin(th))
+
+            seg = Segment(
+                start=copy.deepcopy(arc.pointend),
+                end=pt_via,
+                width=self.width,
+                layer=self.layer,
+                net=self.net,
+            )
+            self.AddMember(seg)
 
         # Reprocess geometry adding center offsets.
         self.Translate(self._center.x, self._center.y)
@@ -2529,6 +2594,7 @@ class MultiPhaseCoil(Group):
 
         # Update the base coil.  Then we'll just copy and move.
         self._coil.angle = angle_rad
+        self._coil.dia_via = self.via.size
         self._coil.Generate()
 
         # Generte list of coil phase names.
@@ -2615,10 +2681,18 @@ class MultiPhaseCoil(Group):
                     if not isinstance(coil, SectorCoil):
                         continue
 
-                    # Via position is at the end of the last,
+                    # Via position is at the end of the last Track element
                     # half arc in the coil
-                    arcs = [a for a in coil.members if isinstance(a, Arc)]
-                    pos = arcs[-1].pointstart
+                    tracks = [t for t in coil.members if isinstance(t, Track)]
+                    track = tracks[-1]
+                    if isinstance(track, Arc):
+                        pos = track.pointend
+                    elif isinstance(track, Segment):
+                        pos = track.start
+                    else:
+                        raise TypeError(
+                            f"Unsupported Track child object type: {type(track)}"
+                        )
 
                     # Create a copy of the base via
                     v = copy.deepcopy(self._via)
@@ -2661,7 +2735,7 @@ if __name__ == "__main__":
     via = Via(size=via_size, drill=drill)
 
     # Tracks
-    width = via_size  # Match via size
+    width = Q(8e-3, "in").to("mm").magnitude
     spacing = Q(6e-3, "in").to("mm").magnitude  # PCBWay min spacing for cheap boards
 
     # 3-phase test, multiplicity 1
@@ -2672,7 +2746,7 @@ if __name__ == "__main__":
         c.dia_inside = 5
         c.dia_outside = 20
         c.layers = ["F.Cu", "B.Cu"]
-        c.width = width
+        c.width = Q(8e-3, "in").to("mm").magnitude
         c.spacing = spacing
         c.via = via
 
@@ -2688,7 +2762,7 @@ if __name__ == "__main__":
         print(c.ToKiCad())
 
     # 3-phase test, multiplicity 2
-    if False:
+    if True:
         c = MultiPhaseCoil()
         c.nets = [1, 2, 3]
         c.multiplicity = 2
@@ -2707,7 +2781,7 @@ if __name__ == "__main__":
         c.mount_hole_pattern_angles = (np.array([0, 120, 240]) + 30) * np.pi / 180
 
         c.Generate()
-        # c.Translate(x=120, y=90)
+        c.Translate(x=120, y=90)
         print(c.ToKiCad())
 
     # 2-phase test, multiplicity 2
@@ -2727,7 +2801,7 @@ if __name__ == "__main__":
         print(c.ToKiCad())
 
     # Sector coil test
-    if True:
+    if False:
         c = SectorCoil()
         c.width = width
         c.spacing = spacing
