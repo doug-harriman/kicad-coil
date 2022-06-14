@@ -6,10 +6,11 @@
 # URL: https://dev-docs.kicad.org/en/file-formats/sexpr-pcb/#_graphic_items_section:~:text=on%20the%20board.-,Tracks%20Section,-This%20section%20lists
 
 
+from __future__ import annotations
+
 import copy
 import logging
 import os
-import sys
 import uuid
 import warnings
 from typing import Tuple
@@ -430,7 +431,7 @@ class Segment(Track):
         self.width = width
         self.layer = layer
 
-    def __repr__(self):
+    def __repr__(self: Segment) -> str:
         s = (
             f"Segment:"
             f"{self._start},"
@@ -441,7 +442,7 @@ class Segment(Track):
         return s
 
     @property
-    def start(self) -> Point:
+    def start(self: Segment) -> Point:
         """
         Segment start point property getter.
 
@@ -451,7 +452,7 @@ class Segment(Track):
         return self._start
 
     @start.setter
-    def start(self, value: Point = None) -> None:
+    def start(self: Segment, value: Point = None) -> None:
         """
         Segment start point property setter.
         NOTE: Creates a point of the Point.
@@ -470,7 +471,7 @@ class Segment(Track):
         self._start = value  # Have our own point.
 
     @property
-    def end(self) -> Point:
+    def end(self: Segment) -> Point:
         """
         Segment end point property getter.
 
@@ -480,7 +481,7 @@ class Segment(Track):
         return self._end
 
     @end.setter
-    def end(self, value: Point = None) -> None:
+    def end(self: Segment, value: Point = None) -> None:
         """
         Segment end point property setter.
 
@@ -498,7 +499,7 @@ class Segment(Track):
         self._end = value  # Have our own point.
 
     @property
-    def layer(self) -> str:
+    def layer(self: Segment) -> str:
         """
         Returns layer for Segment.
 
@@ -509,7 +510,7 @@ class Segment(Track):
         return self._layer
 
     @layer.setter
-    def layer(self, value: str = "F.Cu"):
+    def layer(self: Segment, value: str = "F.Cu"):
         """
         Sets layer for Segment.
 
@@ -521,7 +522,7 @@ class Segment(Track):
         self._layer = value
 
     @property
-    def width(self) -> float:
+    def width(self: Segment) -> float:
         """
         Segment track width property getter.
 
@@ -532,7 +533,7 @@ class Segment(Track):
         return self._width
 
     @width.setter
-    def width(self, value: float = 0.2) -> None:
+    def width(self: Segment, value: float = 0.2) -> None:
         """
         Segment track width setter.
 
@@ -547,22 +548,60 @@ class Segment(Track):
 
         self._width = width
 
-    def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
+    def IntersectionLine(self: Segment, other: Segment = None) -> Point:
+        """
+        Calculates the intersection point of this Segment an another Segment.
+        Treats that Segments as if they were infinite lines.
+
+        Args:
+            other (Segment, optional): Other line. Defaults to None.
+
+        Returns:
+            Point: Intersection Point or None if parallel segments.
+        """
+
+        if other is None:
+            raise ValueError("Second segment not defined.")
+
+        # Formula from:
+        # https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
+        # "Given two points on each line"
+        x1 = self.start.x
+        y1 = self.start.y
+        x2 = self.end.x
+        y2 = self.end.y
+        x3 = other.start.x
+        y3 = other.start.y
+        x4 = other.end.x
+        y4 = other.end.y
+
+        den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+        if np.isclose(den, 0):
+            warnings.warn("Parallel segments, no intersection point.")
+            return None
+
+        x_num = (x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)
+        y_num = (x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)
+
+        return Point(x_num / den, y_num / den)
+
+    def Translate(self: Segment, x: float = 0.0, y: float = 0.0) -> None:
         """
         Translates the Segment Track by the given distances.
         """
         self._start.Translate(x, y)
         self._end.Translate(x, y)
 
-    def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
+    def Rotate(self: Segment, angle: float, x: float = 0.0, y: float = 0.0) -> None:
         """
-        Rotates the Segment about the given x,y coordinates by the given angle in radians.
+        Rotates the Segment about the given x,y coordinates by the given angle
+        in radians.
         """
 
         self._start.Rotate(angle, x, y)
         self._end.Rotate(angle, x, y)
 
-    def ChangeSideFlip(self):
+    def ChangeSideFlip(self: Segment):
         """
         Flips geometry for placing on opposite side.
         """
@@ -572,7 +611,7 @@ class Segment(Track):
         self._end = copy.deepcopy(self._start)
         self._start = temp
 
-    def ToKiCad(self, indent: str = "") -> str:
+    def ToKiCad(self: Segment, indent: str = "") -> str:
         """
         Converts Segment to KiCAD string.
         """
@@ -590,7 +629,7 @@ class Segment(Track):
         )
         return s
 
-    def ToNumpy(self) -> Tuple:
+    def ToNumpy(self: Segment) -> Tuple:
         """
         Returns Numpy arrays for Segment X & Y coordinates.
 
@@ -602,7 +641,7 @@ class Segment(Track):
 
         return np.append(x1, x2), np.append(y1, y2)
 
-    def TraceLen(self) -> float:
+    def TraceLen(self: Segment) -> float:
         """
         Calculates Segment trace length.
 
@@ -2034,10 +2073,8 @@ class SectorCoil(Group):
                 seg_end = Point(intersect_end, offset)
                 offset += dp  # Update offset every other time
 
-            # Toggle
-            create_vertical = not create_vertical
-
             # Segment
+            seg_prev = seg
             seg = Segment(
                 start=seg_start,
                 end=seg_end,
@@ -2046,6 +2083,18 @@ class SectorCoil(Group):
                 net=self.net,
             )
             self.AddMember(seg)
+
+            # If we're not creating an arc, then the new segment
+            # and the old segment intersect to form the coil.
+            # Find the intersection point.
+            if create_vertical and not inner_arc:
+                intersect = seg.IntersectionLine(seg_prev)
+
+                seg_prev.end = intersect
+                seg.start = intersect
+
+            # Toggle
+            create_vertical = not create_vertical
 
         # Add in last half arc.
         arc = Arc(
