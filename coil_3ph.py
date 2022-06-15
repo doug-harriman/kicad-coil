@@ -16,6 +16,7 @@ import warnings
 from typing import Tuple
 
 import numpy as np
+from soupsieve import match
 
 # KiCAD Python
 # pip install kicad_python
@@ -24,7 +25,6 @@ import numpy as np
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# TODO: Group: find by property value
 # TODO: Estimate coil trace resistance.
 #       * TraceLen implemented.
 #       * Need to capture Copper thickness/weight: 35μm=1oz, 70μm=2oz, 105μm=3oz.
@@ -1583,17 +1583,33 @@ class Group:
         else:
             raise TypeError(f'Member has no "id" attribute: {member}')
 
-    def FindByProperty(self, property, value) -> list:
-        """_summary_
+    def FindByProperty(self, property: str = "", value=None) -> list:
+        """
+        Recursively searches members list for members with property equal to value.
 
         Args:
-            property (_type_): _description_
-            value (_type_): _description_
+            property (str): Name of property
+            value (_type_): Value for which to search.
 
         Returns:
-            list: _description_
+            list: Objects with matching property value.
         """
-        pass
+        matches = []
+        if not isinstance(property, str):
+            return matches
+        if len(property) == 0:
+            return matches
+
+        for member in self.members:
+            # Depth first search
+            if isinstance(member, Group):
+                matches.extend(member.FindByProperty(property, value))
+
+            if hasattr(member, property):
+                if getattr(member, property) == value:
+                    matches.append(member)
+
+        return matches
 
     def FindByClass(self, cls=None) -> list:
         """
@@ -2827,9 +2843,12 @@ if __name__ == "__main__":
             fp.write(c.ToKiCad())
         # print(c.ToKiCad())
 
-        matches = c.FindByClass(Via)
+        matches = c.FindByClass(GrText)
         print(matches)
         print(f"Count: {len(matches)}")
+
+        matches = c.FindByProperty("text", "PhA1")
+        print(matches)
 
     # 2-phase test, multiplicity 2
     if False:
