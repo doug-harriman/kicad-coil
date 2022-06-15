@@ -24,17 +24,9 @@ import numpy as np
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# TODO: For inner_arc=false,
-#       Need to determine intersection point and update end points to that.
-# TODO: Add termination criteria for sector tight condition
-#       Theory: line interectdion point radius + spacing + via dia >= outer arc radius
-# TODO: Add optional mounting holes: count & radius
-# Video link to custom hole geometries:
-# URL: https://youtu.be/5Be7XOMmPQE?t=1592
-# Video link to non-plated through holes:
-# URL: https://youtu.be/5Be7XOMmPQE?t=1653
-# TODO: Add optional center hole: radius
-# TODO: Coil needs to capture number of turns in Generate().
+# TODO: Defect: translating MultiPhaseCoil translates the via's twice.
+# TODO: SectorCoil: read only: point first & last like Arc
+# TODO: Group: Find by class, find by property
 # TODO: Estimate coil trace resistance.
 #       * TraceLen implemented.
 #       * Need to capture Copper thickness/weight: 35μm=1oz, 70μm=2oz, 105μm=3oz.
@@ -59,7 +51,11 @@ import numpy as np
 
 # Logging configuration
 # Logging to STDOUT
-# logging.basicConfig(stream=sys.stdout, filemode="w", level=logging.DEBUG)
+
+if False:
+    import sys  # Used by logging
+
+    logging.basicConfig(stream=sys.stdout, filemode="w", level=logging.DEBUG)
 
 
 class Point:
@@ -378,6 +374,11 @@ class Via(Track):
         """
         Translates the Via by the given distances.
         """
+
+        logging.debug(
+            f"Via.Translate:x={self.position.x},y={self.position.y},dx={x},dy={y},id={str(self.id)}"
+        )
+
         self.position.Translate(x, y)
 
     def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
@@ -2662,6 +2663,7 @@ class MultiPhaseCoil(Group):
                         el.layer = layer
 
                         # Text was added to the SectorCoil, so find it.
+                        # TODO: Replace with FindByClass method
                         txt = [
                             child for child in el.members if isinstance(child, GrText)
                         ][0]
@@ -2676,6 +2678,7 @@ class MultiPhaseCoil(Group):
                 self.AddMember(layer_cur)
 
                 # Create vias at center of coils
+                # TODO: Replace with FindByClass method
                 for coil in layer_cur.members:
                     # Skip non-coil members.
                     if not isinstance(coil, SectorCoil):
@@ -2683,6 +2686,7 @@ class MultiPhaseCoil(Group):
 
                     # Via position is at the end of the last Track element
                     # half arc in the coil
+                    # TODO: Replace with SectorCoil.pointend
                     tracks = [t for t in coil.members if isinstance(t, Track)]
                     track = tracks[-1]
                     if isinstance(track, Arc):
@@ -2696,7 +2700,7 @@ class MultiPhaseCoil(Group):
 
                     # Create a copy of the base via
                     v = copy.deepcopy(self._via)
-                    v.position = pos
+                    v.position = copy.deepcopy(pos)
                     v.layers = [self.layers[i_layer - 1], layer]
                     v.net = coil.net
 
@@ -2782,7 +2786,9 @@ if __name__ == "__main__":
 
         c.Generate()
         c.Translate(x=120, y=90)
-        print(c.ToKiCad())
+        with open("tmp.txt", "w") as fp:
+            fp.write(c.ToKiCad())
+        # print(c.ToKiCad())
 
     # 2-phase test, multiplicity 2
     if False:
