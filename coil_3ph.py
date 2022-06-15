@@ -24,7 +24,7 @@ import numpy as np
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# TODO: Group: Find by class, find by property
+# TODO: Group: find by property
 # TODO: Estimate coil trace resistance.
 #       * TraceLen implemented.
 #       * Need to capture Copper thickness/weight: 35μm=1oz, 70μm=2oz, 105μm=3oz.
@@ -1583,6 +1583,41 @@ class Group:
         else:
             raise TypeError(f'Member has no "id" attribute: {member}')
 
+    def FindByProperty(self, property, value) -> list:
+        """_summary_
+
+        Args:
+            property (_type_): _description_
+            value (_type_): _description_
+
+        Returns:
+            list: _description_
+        """
+        pass
+
+    def FindByClass(self, cls=None) -> list:
+        """
+        Recursively searches members list for members of type class.
+
+        Args:
+            cls (class type): Class type to search for.
+
+        Returns:
+            list: List of all child members of type class.
+        """
+
+        matches = []
+        if cls is None:
+            return matches
+
+        for member in self.members:
+            if isinstance(member, cls):
+                matches.append(member)
+            elif isinstance(member, Group):
+                matches.extend(member.FindByClass(cls))
+
+        return matches
+
     def Translate(self, x: float = 0.0, y: float = 0.0):
         """
         Translates geometry by given offset [x,y].
@@ -2800,6 +2835,10 @@ if __name__ == "__main__":
         with open("tmp.txt", "w") as fp:
             fp.write(c.ToKiCad())
         # print(c.ToKiCad())
+
+        matches = c.FindByClass(Via)
+        print(matches)
+        print(f"Count: {len(matches)}")
 
     # 2-phase test, multiplicity 2
     if False:
