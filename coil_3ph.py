@@ -24,8 +24,6 @@ import numpy as np
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# TODO: Defect: translating MultiPhaseCoil translates the via's twice.
-# TODO: SectorCoil: read only: point first & last like Arc
 # TODO: Group: Find by class, find by property
 # TODO: Estimate coil trace resistance.
 #       * TraceLen implemented.
@@ -1678,6 +1676,9 @@ class SectorCoil(Group):
         self._center = Point()
         self._angle = np.pi / 2
 
+        self._pointstart = None
+        self._pointend = None
+
         self._layer = "F.Cu"
         self._width = 0.2
         self._spacing = 0.2
@@ -1909,6 +1910,26 @@ class SectorCoil(Group):
         self._dia_via = value
 
     @property
+    def pointstart(self) -> Point:
+        """
+        Returns Sector coil Track start point.
+
+        Returns:
+            Point: Track start point
+        """
+        return self._pointstart
+
+    @property
+    def pointend(self) -> Point:
+        """
+        Returns Sector coil Track end point.
+
+        Returns:
+            Point: Track end point
+        """
+        return self._pointend
+
+    @property
     def turns(self) -> int:
         """
         Number of turns in coil.
@@ -2011,6 +2032,7 @@ class SectorCoil(Group):
             net=self.net,
         )
         self.AddMember(seg)
+        self._pointstart = seg.start
         offset += dp
 
         # Basic sector coil creation is for a 90 deg sector.
@@ -2153,6 +2175,7 @@ class SectorCoil(Group):
                 net=self.net,
             )
             self.AddMember(arc)
+            self._pointend = arc.pointend
         else:
             # Approximation of middle if remaining triangle.
             # Centroid of triangle is 1/3 above base.
@@ -2173,6 +2196,7 @@ class SectorCoil(Group):
                 net=self.net,
             )
             self.AddMember(seg)
+            self._pointend = seg.end
 
         # Reprocess geometry adding center offsets.
         self.Translate(self._center.x, self._center.y)
@@ -2684,23 +2708,10 @@ class MultiPhaseCoil(Group):
                     if not isinstance(coil, SectorCoil):
                         continue
 
-                    # Via position is at the end of the last Track element
-                    # half arc in the coil
-                    # TODO: Replace with SectorCoil.pointend
-                    tracks = [t for t in coil.members if isinstance(t, Track)]
-                    track = tracks[-1]
-                    if isinstance(track, Arc):
-                        pos = track.pointend
-                    elif isinstance(track, Segment):
-                        pos = track.start
-                    else:
-                        raise TypeError(
-                            f"Unsupported Track child object type: {type(track)}"
-                        )
-
                     # Create a copy of the base via
+                    # Via position is at the end of the last Track element
                     v = copy.deepcopy(self._via)
-                    v.position = copy.deepcopy(pos)
+                    v.position = copy.deepcopy(coil.pointend)
                     v.layers = [self.layers[i_layer - 1], layer]
                     v.net = coil.net
 
