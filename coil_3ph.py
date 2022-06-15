@@ -24,7 +24,7 @@ import numpy as np
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# TODO: Group: find by property
+# TODO: Group: find by property value
 # TODO: Estimate coil trace resistance.
 #       * TraceLen implemented.
 #       * Need to capture Copper thickness/weight: 35μm=1oz, 70μm=2oz, 105μm=3oz.
@@ -2028,7 +2028,6 @@ class SectorCoil(Group):
         rad_pitch = self._width + self._spacing
 
         # Potenital radii
-        # TODO: Rework with middle dia supporting min via dia.
         radii = np.arange(rad_out, 0, -rad_pitch)
 
         # Must be greater than inside radius
@@ -2717,32 +2716,24 @@ class MultiPhaseCoil(Group):
                 layer_cur.ChangeSideFlip()
 
                 # Move all top-level elements to new layer.
-                for el in layer_cur.members:
-                    if isinstance(el, SectorCoil):
-                        el.layer = layer
+                for sc in layer_cur.FindByClass(SectorCoil):
+                    sc.layer = layer
 
-                        # Text was added to the SectorCoil, so find it.
-                        # TODO: Replace with FindByClass method
-                        txt = [
-                            child for child in el.members if isinstance(child, GrText)
-                        ][0]
+                    # Text was added to the SectorCoil, so find it.
+                    txt = sc.FindByClass(GrText)
+                    txt = txt[0]
 
-                        # If last layer, then set to bottom layer silk screen
-                        # If not, then remove from the coil.
-                        if layer == self.layers[-1:][0]:
-                            txt.layer = "B.SilkS"
-                        else:
-                            el.members.remove(txt)
+                    # If last layer, then set to bottom layer silk screen
+                    # If not, then remove from the coil.
+                    if layer == self.layers[-1:][0]:
+                        txt.layer = "B.SilkS"
+                    else:
+                        sc.members.remove(txt)
 
                 self.AddMember(layer_cur)
 
                 # Create vias at center of coils
-                # TODO: Replace with FindByClass method
-                for coil in layer_cur.members:
-                    # Skip non-coil members.
-                    if not isinstance(coil, SectorCoil):
-                        continue
-
+                for coil in layer_cur.FindByClass(SectorCoil):
                     # Create a copy of the base via
                     # Via position is at the end of the last Track element
                     v = copy.deepcopy(self._via)
