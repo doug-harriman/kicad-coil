@@ -16,7 +16,6 @@ import warnings
 from typing import Tuple
 
 import numpy as np
-from soupsieve import match
 
 # KiCAD Python
 # pip install kicad_python
@@ -28,6 +27,7 @@ from soupsieve import match
 # TODO: Estimate coil trace resistance.
 #       * TraceLen implemented.
 #       * Need to capture Copper thickness/weight: 35μm=1oz, 70μm=2oz, 105μm=3oz.
+#       * Use pint.
 # TODO: Estimate coil inductance?
 # TODO: Get Plotly plotting working again.
 # TODO: Output code for FEMM model generation.
@@ -42,17 +42,17 @@ from soupsieve import match
 # TODO: Use teardrop via to minimize annular ring size.
 #       Update SectorCoil.Generate()
 # TODO: Use rounded corners/fillets.
+#       * Read that 90 deg turns aren't a great idea.  Should understand that.
 #       * Radius is from the radius on the innermost coil.
 #         May be larger do to via size.
 #       * Could go back and replace all sharp corners,
 #         or add as we go.
 
 # Logging configuration
-# Logging to STDOUT
-
 if False:
     import sys  # Used by logging
 
+    # Logging to STDOUT
     logging.basicConfig(stream=sys.stdout, filemode="w", level=logging.DEBUG)
 
 
@@ -148,13 +148,13 @@ class Point:
 
 
 class Track:
-    def __init__(self, net: int = 1):
+    def __init__(self):
         """
         Creates a Track base class in the given schematic net.
 
         Assigns UUID to the object as the 'id' property.
         """
-        self._net = net
+        self._net = 1
         self._id = uuid.uuid4()
 
     def __deepcopy__(self, memo):
@@ -220,26 +220,19 @@ class Via(Track):
     Via object.
     """
 
-    def __init__(
-        self,
-        position: Point = None,
-        size: float = 0.8,
-        drill: float = 0.4,
-        layers: str = ["F.Cu", "B.Cu"],
-        net: int = 1,
-    ):
+    def __init__(self: Via) -> Via:
         """
         Creates a Via Track object.
         """
 
-        super().__init__(net)
+        super().__init__()
 
-        self.layers = layers
-        self.position = position
-        self.size = size
-        self.drill = drill
+        self.layers = ["F.Cu", "B.Cu"]
+        self.position = None
+        self.size = 0.8
+        self.drill = 0.4
 
-    def __repr__(self) -> str:
+    def __repr__(self: Via) -> str:
 
         s = (
             f"Via:({self.position.x},{self.position.y}),"
@@ -250,7 +243,7 @@ class Via(Track):
         return s
 
     @property
-    def position(self) -> Point:
+    def position(self: Via) -> Point:
         """
         Via position property getter.
 
@@ -261,7 +254,7 @@ class Via(Track):
         return self._position
 
     @position.setter
-    def position(self, value: Point) -> None:
+    def position(self: Via, value: Point) -> None:
         """
         Via center position getter.
 
@@ -281,7 +274,7 @@ class Via(Track):
         self._position = value
 
     @property
-    def layers(self) -> list:
+    def layers(self: Via) -> list:
         """
         Returns Via layer list.
 
@@ -292,7 +285,7 @@ class Via(Track):
         return self._layers
 
     @layers.setter
-    def layers(self, value: list = None) -> None:
+    def layers(self: Via, value: list = None) -> None:
         """
         Via layers property setter.
 
@@ -315,7 +308,7 @@ class Via(Track):
         self._layers = value
 
     @property
-    def size(self) -> float:
+    def size(self: Via) -> float:
         """
         Via size property getter.
 
@@ -326,7 +319,7 @@ class Via(Track):
         return self._size
 
     @size.setter
-    def size(self, value: float = 0.8) -> None:
+    def size(self: Via, value: float = 0.8) -> None:
         """
         Via size setter.
 
@@ -342,7 +335,7 @@ class Via(Track):
         self._size = size
 
     @property
-    def drill(self) -> float:
+    def drill(self: Via) -> float:
         """
         Via drill property getter.
 
@@ -353,7 +346,7 @@ class Via(Track):
         return self._drill
 
     @drill.setter
-    def drill(self, value: float = 0.4) -> None:
+    def drill(self: Via, value: float = 0.4) -> None:
         """
         Via drill setter.
 
@@ -368,7 +361,7 @@ class Via(Track):
 
         self._drill = drill
 
-    def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
+    def Translate(self: Via, x: float = 0.0, y: float = 0.0) -> None:
         """
         Translates the Via by the given distances.
         """
@@ -379,14 +372,14 @@ class Via(Track):
 
         self.position.Translate(x, y)
 
-    def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
+    def Rotate(self: Via, angle: float, x: float = 0.0, y: float = 0.0) -> None:
         """
         Rotates the Via about the given x,y coordinates by the given angle in radians.
         """
 
         self.center.Rotate(angle, x, y)
 
-    def ToKiCad(self, indent: str = "") -> str:
+    def ToKiCad(self: Via, indent: str = "") -> str:
         """
         Converts Via to KiCAD string.
         """
@@ -423,7 +416,7 @@ class Segment(Track):
         Creates a linear segment Track object.
         """
 
-        super().__init__(net)
+        super().__init__()
 
         self.start = start
         self.end = end
@@ -662,13 +655,12 @@ class Arc(Track):
         end: float = np.pi,
         width: float = 0.1,
         layer: str = "F.Cu",
-        net: int = 1,
     ):
         """
         Creates an Arc Track object.
         """
 
-        super().__init__(net)
+        super().__init__()
 
         self._center = center
         self._radius = radius
@@ -2079,8 +2071,8 @@ class SectorCoil(Group):
             end=seg_end,
             width=self.width,
             layer=self.layer,
-            net=self.net,
         )
+        seg.net = self.net
         self.AddMember(seg)
         self._pointstart = seg.start
         offset += dp
@@ -2140,8 +2132,8 @@ class SectorCoil(Group):
                         end=angle_end,
                         width=self.width,
                         layer=self.layer,
-                        net=self.net,
                     )
+                    arc.net = self.net
                     self.AddMember(arc)
 
             else:
@@ -2154,8 +2146,8 @@ class SectorCoil(Group):
                     end=angle_end,
                     width=self.width,
                     layer=self.layer,
-                    net=self.net,
                 )
+                arc.net = self.net
                 self.AddMember(arc)
 
                 # If we're not adding inner arcs, then check for
@@ -2166,18 +2158,6 @@ class SectorCoil(Group):
                     if radial_dist_left < 2 * radial_dist_min:
                         # Terminate coil generation
                         break
-
-            # Debug logging
-            if arc is not None:
-                logging.debug(
-                    f"SC_ARC:\t"
-                    f"{log_txt},\t"
-                    f"{arc.radius:02.3f},\t"
-                    f"{arc.start-arc.end: .2f},\t"
-                    f"{arc.pointstart.x-arc.pointend.x: .3f},\t"
-                    f"{arc.pointstart.y-arc.pointend.y: .3f},"
-                )
-
             # Calc end point for next segment.
             if create_vertical:
                 seg_end = Point(offset, intersect_end)
@@ -2197,8 +2177,8 @@ class SectorCoil(Group):
                 end=seg_end,
                 width=self.width,
                 layer=self.layer,
-                net=self.net,
             )
+            seg.net = self.net
             self.AddMember(seg)
 
             # If we're not creating an arc, then the new segment
@@ -2222,8 +2202,8 @@ class SectorCoil(Group):
                 end=self._angle / 2,
                 width=self.width,
                 layer=self.layer,
-                net=self.net,
             )
+            arc.net = self.net
             self.AddMember(arc)
             self._pointend = arc.pointend
         else:
@@ -2243,8 +2223,8 @@ class SectorCoil(Group):
                 end=pt_via,
                 width=self.width,
                 layer=self.layer,
-                net=self.net,
             )
+            seg.net = self.net
             self.AddMember(seg)
             self._pointend = seg.end
 
