@@ -2060,6 +2060,7 @@ class SectorCoil(Group):
         # in the inner corner of two lines intersecting.
         # An exact value could be calculated based on line thicknesses however.
         radial_dist_min = self.dia_via + 2 * self.spacing + self.width * 1.25
+        # TODO: Need a tangential dist min termination criteria also.
 
         # Create a first horizontal line.
         offset = 0.0
@@ -2116,7 +2117,6 @@ class SectorCoil(Group):
             # If angle is positive for an inside arc, then the lines cross
             # and we don't want the arc.
             # An inside arc is one created when create_vertical = true
-            arc = None
             if create_vertical:
                 log_txt = "in"
 
@@ -2152,12 +2152,13 @@ class SectorCoil(Group):
 
                 # If we're not adding inner arcs, then check for
                 # termination due to inner coil size getting small.
+                radius_last_intersect = np.sqrt(seg.start.x**2 + seg.start.y**2)
+                radial_dist_left = arc.radius - radius_last_intersect
                 if not inner_arc:
-                    radius_last_intersect = np.sqrt(seg.start.x**2 + seg.start.y**2)
-                    radial_dist_left = arc.radius - radius_last_intersect
                     if radial_dist_left < 2 * radial_dist_min:
                         # Terminate coil generation
                         break
+
             # Calc end point for next segment.
             if create_vertical:
                 seg_end = Point(offset, intersect_end)
@@ -2192,6 +2193,8 @@ class SectorCoil(Group):
 
             # Toggle
             create_vertical = not create_vertical
+
+        # Done adding turns.  Add Track to the inner via.
 
         # Add in last half arc if we were adding inner arcs.
         if inner_arc:
