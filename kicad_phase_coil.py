@@ -1960,7 +1960,16 @@ class SectorCoil(Group):
         Returns:
             Point: Track start point
         """
-        return self._pointstart
+
+        # Find the actual element in case it's been moved.
+        track = self.FindByClass(Track)
+        track = track[0]
+        if isinstance(track, Arc):
+            return track.pointstart
+        elif isinstance(track, Segment):
+            return track.start
+        else:
+            raise TypeError(f"Unexpected last element type: {type(track)}")
 
     @property
     def pointend(self) -> Point:
@@ -1970,20 +1979,29 @@ class SectorCoil(Group):
         Returns:
             Point: Track end point
         """
-        return self._pointend
+
+        # Find the actual element in case it's been moved.
+        track = self.FindByClass(Track)
+        track = track[-1]
+        if isinstance(track, Arc):
+            return track.pointend
+        elif isinstance(track, Segment):
+            return track.end
+        else:
+            raise TypeError(f"Unexpected last element type: {type(track)}")
 
     @property
-    def turns(self) -> int:
+    def turns(self) -> float:
         """
         Number of turns in coil.
 
         Returns:
-            int: Number of turns.
+            float: Number of turns, may have partial turns.
         """
 
         return self._turns
 
-    def Generate(self):
+    def GenerateOld(self):
         """
         Generates coil geometry segments.
 
@@ -2075,7 +2093,6 @@ class SectorCoil(Group):
         )
         seg.net = self.net
         self.AddMember(seg)
-        self._pointstart = seg.start
         offset += dp
 
         # Basic sector coil creation is for a 90 deg sector.
@@ -2208,7 +2225,6 @@ class SectorCoil(Group):
             )
             arc.net = self.net
             self.AddMember(arc)
-            self._pointend = arc.pointend
         else:
             # Approximation of middle if remaining triangle.
             # Centroid of triangle is 1/3 above base.
@@ -2229,7 +2245,209 @@ class SectorCoil(Group):
             )
             seg.net = self.net
             self.AddMember(seg)
-            self._pointend = seg.end
+
+        # Reprocess geometry adding center offsets.
+        self.Translate(self._center.x, self._center.y)
+
+    def Generate(self):
+        """
+        Generates coil geometry segments.
+
+        All segments define the midpoints of the track.
+
+        """
+
+        logging.debug("SC_ARC:\tType,\tRadius,\tAngle,\t  dX,\t  dY,\t")
+
+        # Error checks
+        if self.dia_inside >= self.dia_outside:
+            raise ValueError(
+                f"Inside dia >= outside dia: {self.dia_inside} >= {self.dia_outside}"
+            )
+
+        def arc_intersect(radius: float, coordinate: float) -> float:
+            """
+            Determines the intersection point between a line
+            and an arc.  Assuming:
+            * Full first quadrant arc (0-90 deg)
+            * Horizontal or vertical lines only.
+            * Symmetric problem, so given one coordinate,
+            calculates the other.
+            * Starting with horizontal line, coming in from outside connection point.
+
+            Args:
+                radius (float): Radius of arc.
+                coordinate (float): X coord for vertical line, y for horizontal.
+
+            Returns:
+                float: other coordinate for intersection point.
+            """
+
+            # Assume this is a horizontal line and we've been
+            # given the Y-coordinate of the point.  The angle
+            # of the intersection point is:
+            theta = np.arcsin(coordinate / radius)
+
+            # Then the other point is:
+            return radius * np.cos(theta)
+
+        # Derived from group.  Make sure that we're starting with an empty
+        # group.
+        self._members = []
+        self._turns = 0
+
+        # Line offfset position based on spacing & track size
+        dp = self.width + self.spacing
+
+        # There are 4 elements to the boil: outer arc, inner arc,
+        # horizontal segment and vertical segment.  Generate the starting
+        # position data for each.
+        # We assume we're doing a 90 degree sector, but will rotate
+        # the vertical line after it's created to support arbitrary
+        # sector angles.
+        horiz_y = 0
+        vert_x = dp  # We assume the next coil gets the zero position
+        od = self.dia_outside - self.width / 2  # OD & ID edges on the dias.
+        id = self.dia_inside + self.width / 2
+
+        # Now, calculate the angular difference between the default
+        # 90 degree sector and the actual sector angle we want.
+        angle_sector_offset = self.angle - np.pi / 2
+
+        # We generate 4 elements, to form the coil, then keep making
+        # them smaller until we get to the point where the inside
+        # via just won't fit.  To check via fit, we're looking to have a
+        # circle fit inside the current coil innermost geometry.  To fit,
+        # we need room for the via and the track spacing.  Since Segment
+        # and Arc elements are defined by their centerline, the overall
+        # circle we need to fit also needs the track width.
+        via_fit_radius = self.dia_via / 2 + self.spacing + self.width / 2
+
+        # Calculate the start point of the first element before the loop.
+        # Inside the loop, this is needed to create the outer arc,
+        # so it's updated at the end of the loop.
+        horiz_start = Point(arc_intersect(od / 2, horiz_y), horiz_y)
+
+        # Now we just loop, creating each of the 4 coil geometry
+        # elements until the via won't fit anymore, then we exit.
+        via_fits = True
+        while via_fits:
+            # Determine if the Segments intersect inside or outside
+            # of the inner arc.  That determines if we have an inner
+            # arc on this loop or not, and thus the locations of the
+            # segment ends on the innerside.
+            # TODO: Add segment intersection check.
+            have_inner_arc = True
+            if have_inner_arc:
+                # Horizontal/inner arc intersect point
+                horiz_end = Point(arc_intersect(id / 2, horiz_y), horiz_y)
+
+                # Vertical/inner arc intersect point
+                vert_start = Point(vert_x, arc_intersect(id / 2, vert_x))
+
+            else:
+                # TODO: Horizontal/vertical intersect point
+                pass
+
+            # Horizontal Line
+            horiz_seg = Segment(
+                start=horiz_start, end=horiz_end, width=self.width, layer=self.layer
+            )
+            horiz_seg.net = self.net
+            self.AddMember(horiz_seg)
+            horiz_y += dp
+
+            # Before we create the inner arc, rotate it's start point
+            # into position.
+            vert_start.Rotate(angle_sector_offset)
+
+            # Inner Arc
+            if have_inner_arc:
+                # As the segments move in, the Arc start and
+                # end angles change.
+                angle_start = np.arctan2(horiz_end.y, horiz_end.x)
+                angle_end = np.arctan2(vert_start.y, vert_start.x)
+                inner_arc = Arc(
+                    center=Point(),
+                    radius=id / 2,
+                    start=angle_start,
+                    end=angle_end,
+                    width=self.width,
+                    layer=self.layer,
+                )
+                inner_arc.net = self.net
+                self.AddMember(inner_arc)
+                id += 2 * dp  # Working a diameter not a radius
+
+            # Vertical Line
+            vert_end = Point(vert_x, arc_intersect(od / 2, vert_x))
+            vert_end.Rotate(angle_sector_offset)
+            vert_seg = Segment(
+                start=vert_start, end=vert_end, width=self.width, layer=self.layer
+            )
+            vert_seg.net = self.net
+            self.AddMember(vert_seg)
+            vert_x += dp
+
+            # Go ahead and pre-calc the start point of the next
+            # horiz segment, as this is also the end point of the
+            # outer arc.
+            horiz_start = Point(arc_intersect(od / 2, horiz_y), horiz_y)
+
+            # Outer Arc
+            angle_start = np.arctan2(vert_end.y, vert_end.x)
+            angle_end = np.arctan2(horiz_start.y, horiz_start.x)
+            outer_arc = Arc(
+                center=Point(),
+                radius=od / 2,
+                start=angle_start,
+                end=angle_end,
+                width=self.width,
+                layer=self.layer,
+            )
+            outer_arc.net = self.net
+            self.AddMember(outer_arc)
+            od -= 2 * dp  # Working a diameter not a radius
+
+            # Check for termination criteria
+            # TODO: Replace this with the circle fit check
+            # TODO: Corner case - if we've created the first outer arc
+            #       (turns=0 still) and we don't fit, we have a degenerate
+            #       case and can't create a coil.
+            # TODO: After we've created our first turn successfully,
+            #       need to check for fit at each element as you don't know
+            #       which element will be the one that makes things too small.
+            # TODO: It is possible to get partial turns if we don't make it
+            #       all of the way around.
+            radial_gap = (od - id) / 2
+            if radial_gap <= via_fit_radius:
+                via_fits = False
+
+            # If we get here, we've added a full turn to the coil
+            self._turns += 1
+
+        # Done adding turns.  Add Track to the inner via.
+
+        # The via is going to be at a point on the line
+        # that bisects the last two Segments added.
+        # It'll be at a radial distance of the radius of the
+        # last outside arc added, less the via_fit radiddddddddddddus.
+        segs = self.FindByClass(Segment)
+        # pt_intersect = segs[-2].Intersect(segs[-1])
+        # th = segs[-2].Angle - segs[-1].Angle
+
+        # Point for the via.
+        # r = outer_arc.radius - via_fit_radius
+        # pt_via = Point(r * np.cos(th), r * np.sin(th)) + pt_intersect
+
+        # seg = Segment(
+        #     start=copy.deepcopy(arc.pointend),
+        #     end=pt_via,
+        #     width=self.width,
+        #     layer=self.layer,
+        # )
+        # seg.net = self.net
+        # self.AddMember(seg)
 
         # Reprocess geometry adding center offsets.
         self.Translate(self._center.x, self._center.y)
