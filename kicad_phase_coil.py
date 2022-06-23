@@ -540,7 +540,21 @@ class Segment(Track):
 
         self._width = width
 
-    def IntersectionLine(self: Segment, other: Segment = None) -> Point:
+    @property
+    def angle(self: Segment) -> float:
+        """
+        Angle of rotation of segment from horizontal.
+
+        Args:
+            self (Segment)
+
+        Returns:
+            float: Angle of rotation of segment from horizontal.
+        """
+
+        return np.arctan2(self.end.y - self.start.y, self.end.x - self.start.x)
+
+    def IntersectionPoint(self: Segment, other: Segment = None) -> Point:
         """
         Calculates the intersection point of this Segment an another Segment.
         Treats that Segments as if they were infinite lines.
@@ -2203,7 +2217,7 @@ class SectorCoil(Group):
             # and the old segment intersect to form the coil.
             # Find the intersection point.
             if create_vertical and not inner_arc:
-                intersect = seg.IntersectionLine(seg_prev)
+                intersect = seg.IntersectionPoint(seg_prev)
 
                 seg_prev.end = copy.deepcopy(intersect)
                 seg.start = copy.deepcopy(intersect)
@@ -2431,23 +2445,24 @@ class SectorCoil(Group):
         # The via is going to be at a point on the line
         # that bisects the last two Segments added.
         # It'll be at a radial distance of the radius of the
-        # last outside arc added, less the via_fit radiddddddddddddus.
+        # last outside arc added, less the via_fit radius.
         segs = self.FindByClass(Segment)
-        # pt_intersect = segs[-2].Intersect(segs[-1])
-        # th = segs[-2].Angle - segs[-1].Angle
+        pt_intersect = segs[-2].IntersectionPoint(segs[-1])
+        th = segs[-2].angle - segs[-1].angle
 
         # Point for the via.
-        # r = outer_arc.radius - via_fit_radius
-        # pt_via = Point(r * np.cos(th), r * np.sin(th)) + pt_intersect
+        r = outer_arc.radius - via_fit_radius
+        # pt_via = Point(r * np.cos(th) + pt_intersect.x, r * np.sin(th) + pt_intersect.y)
+        pt_via = Point(r * np.cos(th), r * np.sin(th))
 
-        # seg = Segment(
-        #     start=copy.deepcopy(arc.pointend),
-        #     end=pt_via,
-        #     width=self.width,
-        #     layer=self.layer,
-        # )
-        # seg.net = self.net
-        # self.AddMember(seg)
+        seg = Segment(
+            start=copy.deepcopy(self.pointend),
+            end=pt_via,
+            width=self.width,
+            layer=self.layer,
+        )
+        seg.net = self.net
+        self.AddMember(seg)
 
         # Reprocess geometry adding center offsets.
         self.Translate(self._center.x, self._center.y)
@@ -2990,7 +3005,9 @@ if __name__ == "__main__":
     # Base via
     drill = 0.3
     via_size = 0.61
-    via = Via(size=via_size, drill=drill)
+    via = Via()
+    via.size = via_size
+    via.drill = drill
 
     # Tracks
     width = Q(8e-3, "in").to("mm").magnitude
@@ -3020,7 +3037,7 @@ if __name__ == "__main__":
         print(c.ToKiCad())
 
     # 3-phase test, multiplicity 2
-    if True:
+    if False:
         c = MultiPhaseCoil()
         c.nets = [1, 2, 3]
         c.multiplicity = 2
@@ -3052,7 +3069,7 @@ if __name__ == "__main__":
         print(matches)
 
     # 2-phase test, multiplicity 2
-    if False:
+    if True:
         c = MultiPhaseCoil()
         c.nets = [1, 2]
         c.multiplicity = 2
@@ -3065,7 +3082,9 @@ if __name__ == "__main__":
 
         c.Generate()
         c.Translate(x=120, y=90)
-        print(c.ToKiCad())
+
+        with open("tmp.txt", "w") as fp:
+            fp.write(c.ToKiCad())
 
     # Sector coil test
     if False:
