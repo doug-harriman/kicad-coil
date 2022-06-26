@@ -24,6 +24,8 @@ import numpy as np
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
+# BUG: Via to inner arc track spacing insufficient.
+# BUG: Segment intersect case not handled yet.
 # TODO: Estimate coil trace resistance.
 #       * TraceLen implemented.
 #       * Need to capture Copper thickness/weight: 35μm=1oz, 70μm=2oz, 105μm=3oz.
@@ -611,6 +613,11 @@ class Segment(Track):
         """
         Flips geometry for placing on opposite side.
         """
+
+        # TODO: Do we really want to swap positions here?
+        #       Swapping positions changes the end points, which
+        #       changes the points for connectivity when calling
+        #       SecterCoil.pointend
 
         # Just flip start & end
         temp = copy.deepcopy(self._end)
@@ -1798,7 +1805,12 @@ class SectorCoil(Group):
         if net < 1:
             raise ValueError(f"Net ID < 1: {value}")
 
+        # Set the default value for any new elements.
         self._net = net
+
+        # Recursively set nets for any already created elements.
+        for track in self.FindByClass(Track):
+            track.net = net
 
     @property
     def width(self) -> float:
@@ -2553,6 +2565,7 @@ class MultiPhaseCoil(Group):
         """
         MultiPhaseCoil nets list setter.
         Phase count determined by length of nets list.
+        Must be set before generation.
 
         Args:
             value (list): List of net ID's (ints)
@@ -2895,14 +2908,14 @@ class MultiPhaseCoil(Group):
         # Create first layer set of coils.
         # We can then just copy that to other layers
         layer_g = Group()
-        for i_net, n in enumerate(self.nets * self.multiplicity):
+        for i_coil in range(0, len(self.nets) * self.multiplicity):
             # Create individual coil
             c = copy.deepcopy(self._coil)
-            name = ph_name[i_net]
+            name = ph_name[i_coil]
             c.name = name
             c.layer = self.layers[0]
-            c.net = n
-            c.Rotate(angle_rad * i_net)
+            c.net = self.nets[i_coil % len(self.nets)]
+            c.Rotate(angle_rad * i_coil)
 
             # Create coil text
             t = GrText(text=name)
@@ -2916,7 +2929,7 @@ class MultiPhaseCoil(Group):
             t.Translate(r, 0)
 
             # Rotate text with coil
-            txt_angle = angle_rad * i_net + angle_rad / 2
+            txt_angle = angle_rad * i_coil + angle_rad / 2
             t.Rotate(txt_angle)
 
             # Add label to coil
