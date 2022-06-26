@@ -24,8 +24,13 @@ import numpy as np
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# BUG: Via to inner arc track spacing insufficient.
 # BUG: Segment intersect case not handled yet.
+# TODO: Circle fit check
+# TODO: Corner case - if we've created the first outer arc
+#       (turns=0 still) and we don't fit, we have a degenerate
+#       case and can't create a coil.
+# TODO: It is possible to get partial turns if we don't make it
+#       all of the way around.
 # TODO: Estimate coil trace resistance.
 #       * TraceLen implemented.
 #       * Need to capture Copper thickness/weight: 35μm=1oz, 70μm=2oz, 105μm=3oz.
@@ -2333,6 +2338,11 @@ class SectorCoil(Group):
         od = self.dia_outside - self.width / 2  # OD & ID edges on the dias.
         id = self.dia_inside + self.width / 2
 
+        # Now we pre-offset the ID and OD as they get updated
+        # right before creation
+        id -= 2 * dp
+        od += 2 * dp
+
         # Now, calculate the angular difference between the default
         # 90 degree sector and the actual sector angle we want.
         angle_sector_offset = self.angle - np.pi / 2
@@ -2344,7 +2354,7 @@ class SectorCoil(Group):
         # we need room for the via and the track spacing.  Since Segment
         # and Arc elements are defined by their centerline, the overall
         # circle we need to fit also needs the track width.
-        via_fit_radius = self.dia_via / 2 + self.spacing + self.width / 2
+        via_fit_radius = self.dia_via + 2 * self.spacing + self.width
 
         # Calculate the start point of the first element before the loop.
         # Inside the loop, this is needed to create the outer arc,
@@ -2361,6 +2371,7 @@ class SectorCoil(Group):
             # segment ends on the innerside.
             # TODO: Add segment intersection check.
             have_inner_arc = True
+            id += 2 * dp  # Working a diameter not a radius
             if have_inner_arc:
                 # Horizontal/inner arc intersect point
                 horiz_end = Point(arc_intersect(id / 2, horiz_y), horiz_y)
@@ -2384,6 +2395,12 @@ class SectorCoil(Group):
             # into position.
             vert_start.Rotate(angle_sector_offset)
 
+            # Check for termination criteria
+            radial_gap = (od - id) / 2
+            if radial_gap <= via_fit_radius:
+                via_fits = False
+                continue
+
             # Inner Arc
             if have_inner_arc:
                 # As the segments move in, the Arc start and
@@ -2400,9 +2417,9 @@ class SectorCoil(Group):
                 )
                 inner_arc.net = self.net
                 self.AddMember(inner_arc)
-                id += 2 * dp  # Working a diameter not a radius
 
             # Vertical Line
+            od -= 2 * dp  # Working a diameter not a radius
             vert_end = Point(vert_x, arc_intersect(od / 2, vert_x))
             vert_end.Rotate(angle_sector_offset)
             vert_seg = Segment(
@@ -2417,6 +2434,12 @@ class SectorCoil(Group):
             # outer arc.
             horiz_start = Point(arc_intersect(od / 2, horiz_y), horiz_y)
 
+            # Check for termination criteria
+            radial_gap = (od - id) / 2
+            if radial_gap <= via_fit_radius:
+                via_fits = False
+                continue
+
             # Outer Arc
             angle_start = np.arctan2(vert_end.y, vert_end.x)
             angle_end = np.arctan2(horiz_start.y, horiz_start.x)
@@ -2430,21 +2453,6 @@ class SectorCoil(Group):
             )
             outer_arc.net = self.net
             self.AddMember(outer_arc)
-            od -= 2 * dp  # Working a diameter not a radius
-
-            # Check for termination criteria
-            # TODO: Replace this with the circle fit check
-            # TODO: Corner case - if we've created the first outer arc
-            #       (turns=0 still) and we don't fit, we have a degenerate
-            #       case and can't create a coil.
-            # TODO: After we've created our first turn successfully,
-            #       need to check for fit at each element as you don't know
-            #       which element will be the one that makes things too small.
-            # TODO: It is possible to get partial turns if we don't make it
-            #       all of the way around.
-            radial_gap = (od - id) / 2
-            if radial_gap <= via_fit_radius:
-                via_fits = False
 
             # If we get here, we've added a full turn to the coil
             self._turns += 1
@@ -2455,12 +2463,16 @@ class SectorCoil(Group):
         # that bisects the last two Segments added.
         # It'll be at a radial distance of the radius of the
         # last outside arc added, less the via_fit radius.
-        segs = self.FindByClass(Segment)
-        # pt_intersect = segs[-2].IntersectionPoint(segs[-1])
-        th = (segs[-2].angle - segs[-1].angle) / 2
+        # segs = self.FindByClass(Segment)
+        # # pt_intersect = segs[-2].IntersectionPoint(segs[-1])
+        # th = (segs[-2].angle - segs[-1].angle) / 2
+
+        # For case where we have inner arc
+        arcs = self.FindByClass(Arc)
+        th = np.mean([arcs[-1].start, arcs[-1].end])
 
         # Point for the via.
-        r = outer_arc.radius - via_fit_radius
+        r = outer_arc.radius - self.spacing - self.dia_via / 2 - self.width / 2
         # pt_via = Point(r * np.cos(th) + pt_intersect.x, r * np.sin(th) + pt_intersect.y)
         pt_via = Point(r * np.cos(th), r * np.sin(th))
 
