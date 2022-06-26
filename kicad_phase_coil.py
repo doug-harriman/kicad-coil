@@ -1800,9 +1800,6 @@ class SectorCoil(Group):
 
         self._net = net
 
-        # For regeneration of geometry
-        self.Generate()
-
     @property
     def width(self) -> float:
         """
@@ -2447,8 +2444,8 @@ class SectorCoil(Group):
         # It'll be at a radial distance of the radius of the
         # last outside arc added, less the via_fit radius.
         segs = self.FindByClass(Segment)
-        pt_intersect = segs[-2].IntersectionPoint(segs[-1])
-        th = segs[-2].angle - segs[-1].angle
+        # pt_intersect = segs[-2].IntersectionPoint(segs[-1])
+        th = (segs[-2].angle - segs[-1].angle) / 2
 
         # Point for the via.
         r = outer_arc.radius - via_fit_radius
@@ -2931,13 +2928,14 @@ class MultiPhaseCoil(Group):
         # Create other layers.
         if len(self.layers) > 1:
 
-            for i_layer, layer in enumerate(self.layers):
-                if i_layer == 0:
-                    # First layer, special case.
-                    # Add it in
-                    layer_cur = copy.deepcopy(layer_g)
-                    self.AddMember(layer_cur)
-                    continue
+            # Layers are added by flipping previous layer.
+            # This keeps the mirroring correct.
+            # The first layer is a added directly, then
+            # we process the rest of the layers.
+            layer_cur = copy.deepcopy(layer_g)
+            self.AddMember(layer_cur)
+
+            for layer_group in self.layers[1:]:
 
                 # Copy the pervious layer to the current layer.
                 layer_cur = copy.deepcopy(layer_cur)
@@ -2949,7 +2947,7 @@ class MultiPhaseCoil(Group):
 
                 # Move all top-level elements to new layer.
                 for sc in layer_cur.FindByClass(SectorCoil):
-                    sc.layer = layer
+                    sc.layer = layer_group
 
                     # Text was added to the SectorCoil, so find it.
                     txt = sc.FindByClass(GrText)
@@ -2957,20 +2955,32 @@ class MultiPhaseCoil(Group):
 
                     # If last layer, then set to bottom layer silk screen
                     # If not, then remove from the coil.
-                    if layer == self.layers[-1:][0]:
+                    if layer_group == self.layers[-1]:
                         txt.layer = "B.SilkS"
                     else:
                         sc.members.remove(txt)
 
                 self.AddMember(layer_cur)
 
-                # Create vias at center of coils
-                for coil in layer_cur.FindByClass(SectorCoil):
+            # Reprocess the list, selecting the even layers and adding
+            # the vias between those and the next layer
+            # Since we're adding vias to the top level group, only
+            # look at the indecies of the group members when we start.
+            indecies = range(0, len(self.members))
+            for i_layer in indecies:
+                # Skip odd numbered layers.
+                # We do the full enumeration of the list so that we have
+                # a proper index reference to the next odd numbered layer.
+                if i_layer % 2 == 1:
+                    continue
+
+                # Create vias at center of on even layers.
+                for coil in self.members[i_layer].FindByClass(SectorCoil):
                     # Create a copy of the base via
                     # Via position is at the end of the last Track element
                     v = copy.deepcopy(self._via)
                     v.position = copy.deepcopy(coil.pointend)
-                    v.layers = [self.layers[i_layer - 1], layer]
+                    v.layers = [self.layers[i_layer], self.layers[i_layer + 1]]
                     v.net = coil.net
 
                     self.AddMember(v)
@@ -3081,7 +3091,7 @@ if __name__ == "__main__":
         c.via = via
 
         c.Generate()
-        c.Translate(x=120, y=90)
+        # c.Translate(x=120, y=90)
 
         with open("tmp.txt", "w") as fp:
             fp.write(c.ToKiCad())
