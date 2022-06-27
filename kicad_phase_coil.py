@@ -24,7 +24,7 @@ import numpy as np
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# BUG: Segment intersect case not handled yet.
+# BUG: Segment intersect stopping criterion not handled yet.
 # TODO: Circle fit check
 # TODO: Corner case - if we've created the first outer arc
 #       (turns=0 still) and we don't fit, we have a degenerate
@@ -2106,7 +2106,6 @@ class SectorCoil(Group):
         # in the inner corner of two lines intersecting.
         # An exact value could be calculated based on line thicknesses however.
         radial_dist_min = self.dia_via + 2 * self.spacing + self.width * 1.25
-        # TODO: Need a tangential dist min termination criteria also.
 
         # Create a first horizontal line.
         offset = 0.0
@@ -2336,11 +2335,11 @@ class SectorCoil(Group):
         horiz_y = 0
         vert_x = dp  # We assume the next coil gets the zero position
         od = self.dia_outside - self.width / 2  # OD & ID edges on the dias.
-        id = self.dia_inside + self.width / 2
+        arc_id = self.dia_inside + self.width / 2
 
         # Now we pre-offset the ID and OD as they get updated
         # right before creation
-        id -= 2 * dp
+        arc_id -= 2 * dp
         od += 2 * dp
 
         # Now, calculate the angular difference between the default
@@ -2364,24 +2363,24 @@ class SectorCoil(Group):
         # Now we just loop, creating each of the 4 coil geometry
         # elements until the via won't fit anymore, then we exit.
         via_fits = True
+        have_inner_arc = True  # Assume we have an inner arc, check first thing
+
         while via_fits:
             # Determine if the Segments intersect inside or outside
             # of the inner arc.  That determines if we have an inner
             # arc on this loop or not, and thus the locations of the
             # segment ends on the innerside.
-            # TODO: Add segment intersection check.
-            have_inner_arc = True
-            id += 2 * dp  # Working a diameter not a radius
-            if have_inner_arc:
-                # Horizontal/inner arc intersect point
-                horiz_end = Point(arc_intersect(id / 2, horiz_y), horiz_y)
+            arc_id += 2 * dp  # Working a diameter not a radius
 
-                # Vertical/inner arc intersect point
-                vert_start = Point(vert_x, arc_intersect(id / 2, vert_x))
+            # Assume we have an inner arc then check
+            # Horizontal/inner arc intersect point
+            horiz_end = Point(arc_intersect(arc_id / 2, horiz_y), horiz_y)
 
-            else:
-                # TODO: Horizontal/vertical intersect point
-                pass
+            # Vertical/inner arc intersect point
+            vert_start = Point(vert_x, arc_intersect(arc_id / 2, vert_x))
+
+            # Rotate it into position.
+            vert_start.Rotate(angle_sector_offset)
 
             # Horizontal Line
             horiz_seg = Segment(
@@ -2391,9 +2390,20 @@ class SectorCoil(Group):
             self.AddMember(horiz_seg)
             horiz_y += dp
 
-            # Before we create the inner arc, rotate it's start point
-            # into position.
-            vert_start.Rotate(angle_sector_offset)
+            # Segment intersection check vs. arc
+            vert_end = Point(vert_x, arc_intersect(od / 2, vert_x))
+            vert_end.Rotate(angle_sector_offset)
+            temp_seg = Segment(start=vert_start, end=vert_end)
+            pt_intersect = horiz_seg.IntersectionPoint(temp_seg)
+            rad_intersect = np.sqrt(pt_intersect.x**2 + pt_intersect.y**2)
+
+            id = arc_id
+            if rad_intersect >= id / 2:
+                id = 2 * rad_intersect
+                have_inner_arc = False
+
+                # Update horiz seg endpoint.
+                horiz_seg.end = copy.deepcopy(pt_intersect)
 
             # Check for termination criteria
             radial_gap = (od - id) / 2
@@ -2409,7 +2419,7 @@ class SectorCoil(Group):
                 angle_end = np.arctan2(vert_start.y, vert_start.x)
                 inner_arc = Arc(
                     center=Point(),
-                    radius=id / 2,
+                    radius=arc_id / 2,
                     start=angle_start,
                     end=angle_end,
                     width=self.width,
@@ -2420,6 +2430,10 @@ class SectorCoil(Group):
 
             # Vertical Line
             od -= 2 * dp  # Working a diameter not a radius
+            if not have_inner_arc:
+                # Vertical start point is now just intersection
+                vert_start = copy.deepcopy(pt_intersect)
+
             vert_end = Point(vert_x, arc_intersect(od / 2, vert_x))
             vert_end.Rotate(angle_sector_offset)
             vert_seg = Segment(
@@ -3104,10 +3118,28 @@ if __name__ == "__main__":
         print(matches)
 
     # 2-phase test, multiplicity 2
-    if True:
+    if False:
         c = MultiPhaseCoil()
         c.nets = [1, 2]
         c.multiplicity = 2
+        c.dia_inside = 5
+        c.dia_outside = 20
+        c.layers = ["F.Cu", "B.Cu"]
+        c.width = width
+        c.spacing = spacing
+        c.via = via
+
+        c.Generate()
+        # c.Translate(x=120, y=90)
+
+        with open("tmp.txt", "w") as fp:
+            fp.write(c.ToKiCad())
+
+    # 2-phase test, multiplicity 4
+    if True:
+        c = MultiPhaseCoil()
+        c.nets = [1, 2]
+        c.multiplicity = 4
         c.dia_inside = 5
         c.dia_outside = 20
         c.layers = ["F.Cu", "B.Cu"]
