@@ -64,19 +64,19 @@ if False:
 
 
 class Point:
-    def __init__(self, x: float = 0.0, y: float = 0.0):
+    def __init__(self: Point, x: float = 0.0, y: float = 0.0):
         self._x = x
         self._y = y
 
     @property
-    def x(self) -> float:
+    def x(self: Point) -> float:
         """
         Returns x coordinate.
         """
         return self._x
 
     @x.setter
-    def x(self, value: float = 0.0):
+    def x(self: Point, value: float = 0.0):
         """
         Set X coordinate.
 
@@ -88,14 +88,14 @@ class Point:
         self._x = value
 
     @property
-    def y(self) -> float:
+    def y(self: Point) -> float:
         """
         Returns y coordinate.
         """
         return self._y
 
     @y.setter
-    def y(self, value: float = 0.0):
+    def y(self: Point, value: float = 0.0):
         """
         Set Y coordinate.
 
@@ -106,21 +106,66 @@ class Point:
         value = float(value)
         self._y = value
 
-    def __repr__(self):
+    @property
+    def magnitude(self: Point) -> float:
+        """
+        Treats point as a vector starting at (0,0) and returns vector magnitude.
+
+        Returns:
+            float: Vector magnitude from (0,0) to Point.
+        """
+
+        return np.sqrt(self.x**2 + self.y**2)
+
+    @property
+    def angle(self: Point) -> float:
+        """
+        Returns the angle from the horizontal axis to a vector from (0,0) to Point.
+        Uses Numpy.arctan2.
+
+        Returns:
+            float: angle between horizontal axis and vector to point.
+        """
+
+        return np.arctan2(self.y, self.x)
+
+    def __repr__(self: Point):
 
         return f"Point(x={self.x},y={self.y})"
 
-    def __str__(self):
+    def __str__(self: Point):
+
         return f"({self.x:0.6f},{self.y:0.6f})"
 
-    def Translate(self, x: float = 0.0, y: float = 0.0) -> None:
+    def __add__(self: Point, other: Point = None) -> Point:
+        """
+        Adds Point to this Point returning a new Point.
+
+        Args:
+            other (Point): Point to add to this point.
+
+        Returns:
+            Point: New Point with x_new = x_1 + x_2, same for y.
+        """
+
+        if other is None:
+            return Point()
+        if not isinstance(other, Point):
+            raise TypeError(f"Point type expected, got: {type(other)}")
+
+        new = Point()
+        new.x = self.x + other.x
+        new.y = self.y + other.y
+        return new
+
+    def Translate(self: Point, x: float = 0.0, y: float = 0.0) -> None:
         """
         Translates the Point by the given distances.
         """
         self._x += x
         self._y += y
 
-    def Rotate(self, angle: float, x: float = 0.0, y: float = 0.0) -> None:
+    def Rotate(self: Point, angle: float, x: float = 0.0, y: float = 0.0) -> None:
         """
         Rotates the point about the given x,y coordinates by the given angle in radians.
         """
@@ -139,14 +184,14 @@ class Point:
         # Translate back
         self.Translate(x, y)
 
-    def ToKiCad(self) -> str:
+    def ToKiCad(self: Point) -> str:
         """
         Returns string representation of Point in KiCAD format.
         """
 
         return f"{self._x:0.6f} {self._y:0.6f}"
 
-    def ToNumpy(self) -> Tuple:
+    def ToNumpy(self: Point) -> Tuple:
         """
         Returns Numpy arrays for X & Y coordinates.
         """
@@ -2405,11 +2450,13 @@ class SectorCoil(Group):
                 # Update horiz seg endpoint.
                 horiz_seg.end = copy.deepcopy(pt_intersect)
 
-            # Check for termination criteria
+            # Check radial direction termination criteria
             radial_gap = (od - id) / 2
             if radial_gap <= via_fit_radius:
                 via_fits = False
                 continue
+
+            # TODO: Check  tangential direction termination criterion
 
             # Inner Arc
             if have_inner_arc:
@@ -2448,11 +2495,13 @@ class SectorCoil(Group):
             # outer arc.
             horiz_start = Point(arc_intersect(od / 2, horiz_y), horiz_y)
 
-            # Check for termination criteria
+            # Check radial direction termination criteria
             radial_gap = (od - id) / 2
             if radial_gap <= via_fit_radius:
                 via_fits = False
                 continue
+
+            # TODO: Check  tangential direction termination criterion
 
             # Outer Arc
             angle_start = np.arctan2(vert_end.y, vert_end.x)
