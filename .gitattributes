@@ -1,0 +1,5 @@
+*.schdoc diff=allspice
+*.pcbdoc diff=allspice
+
+*.kicad_sch diff=allspice
+*.kicad_pcb diff=allspice
