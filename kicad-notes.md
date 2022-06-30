@@ -26,9 +26,21 @@ VERSION5.  Full video series on producing a PCBA with KiCAD.
 
 * [Design Rules](https://www.pcbway.com/capabilities.html#:~:text=PCB%20Capabilities%20%2D%20Quick%2Dturn%20PCB)
 * [Only accepts RS-274D format Gerbers](https://circuitstate.com/tutorials/how-to-get-your-kicad-pcb-design-ready-for-fabrication-kicad-version-6-tutorial/)
+* Cheat sheet design rules for $5 PCB
+    * 0.3 min hole dia
+    * 6 mil (0.1524mm) trace width
+    * 6 mil (0.1524mm) trace spacing
+    * Vias
+        * 6 mil annular ring
+        * Total via dia: hole + 2*annluar ring = 0.61 mm
+
 
 ## JLPCB
 ## OSHPARK
+
+## Sierra Circuits
+* [PCB Calculators](https://www.protoexpress.com/tools)
+
 
 # KiCAD Plugins
 
@@ -40,3 +52,4 @@ VERSION5.  Full video series on producing a PCBA with KiCAD.
     * Converts vias to teardrop vias.  
     * Provides a GUI.
     * Might also be a good source for understanding how someone else generated code.
+
