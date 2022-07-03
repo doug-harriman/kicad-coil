@@ -2,6 +2,8 @@
 # Three phase coil generation script.
 # Inspired by: https://gist.github.com/JoanTheSpark/e5afd7081d9d1b9ad91a
 #
+# repo: https://github.com/doug-harriman/kicad-coil
+#
 # Tracks doc:
 # URL: https://dev-docs.kicad.org/en/file-formats/sexpr-pcb/#_graphic_items_section:~:text=on%20the%20board.-,Tracks%20Section,-This%20section%20lists
 
@@ -24,8 +26,6 @@ import numpy as np
 # Python netlist generator:
 # URL: https://skidl.readthedocs.io/en/latest/readme.html
 
-# BUG: Segment intersect stopping criterion not handled yet.
-# TODO: Circle fit check
 # TODO: Corner case - if we've created the first outer arc
 #       (turns=0 still) and we don't fit, we have a degenerate
 #       case and can't create a coil.
@@ -49,7 +49,8 @@ import numpy as np
 # TODO: Use teardrop via to minimize annular ring size.
 #       Update SectorCoil.Generate()
 # TODO: Use rounded corners/fillets.
-#       * Read that 90 deg turns aren't a great idea.  Should understand that.
+#       * Sharp corners have a cross sectional area greater than
+#         track width.
 #       * Radius is from the radius on the innermost coil.
 #         May be larger do to via size.
 #       * Could go back and replace all sharp corners,
@@ -2272,16 +2273,20 @@ class SectorCoil(Group):
             if not have_inner_arc:
                 # Check to hozizontal line we're about to add.
 
+                # Calculate the intersection point of hte new hoziz seg and the
+                # previous vert seg.  They don't really intersect there, but
+                # that is the point everything is based off of.
+                pt_intersect = horiz_seg.IntersectionPoint(vert_seg)
+
                 # Bisector angle is the mean vector angles of the Segments
                 th = np.mean([horiz_seg.angle, vert_seg.angle])
 
                 # Radius from the intersection point to the via center,
                 # inset from OD.
-                r = outer_arc.radius - self.dia_via / 2 - pt_intersect.magnitude
+                r = outer_arc.radius - pt_intersect.magnitude - via_fit_tangential
 
                 # Via offset from origin, then shifted by intersection point.
                 pt_via = Point(r * np.cos(th), r * np.sin(th))
-                # BUG: This is not the correct intersection point for the segment we're about to add.
                 pt_via += pt_intersect
 
                 # Vertical dist to horizontal line.
@@ -2298,7 +2303,7 @@ class SectorCoil(Group):
             vert_end.Rotate(angle_sector_offset)
             temp_seg = Segment(start=vert_start, end=vert_end)
             pt_intersect = horiz_seg.IntersectionPoint(temp_seg)
-            rad_intersect = np.sqrt(pt_intersect.x**2 + pt_intersect.y**2)
+            rad_intersect = pt_intersect.magnitude
 
             id = arc_id
             if rad_intersect >= id / 2:
@@ -2353,7 +2358,7 @@ class SectorCoil(Group):
 
                 # Radius from the intersection point to the via center,
                 # inset from OD.
-                r = outer_arc.radius - self.dia_via / 2 - pt_intersect.magnitude
+                r = outer_arc.radius - pt_intersect.magnitude - via_fit_tangential
 
                 # Via offset from origin, then shifted by intersection point.
                 pt_via = Point(r * np.cos(th), r * np.sin(th))
@@ -2379,6 +2384,27 @@ class SectorCoil(Group):
                 via_fits = False
                 continue
 
+            # Check tangential direction termination criterion for vertical line
+            if not have_inner_arc:
+                # Check to vertical/angled line we're about to add.
+
+                # Bisector angle is the mean vector angles of the Segments
+                th = np.mean([horiz_seg.angle, vert_seg.angle])
+
+                # Radius from the intersection point to the via center,
+                # inset from OD.
+                # Use radius for outer arc we're just about to create.
+                r = od / 2 - pt_intersect.magnitude - via_fit_tangential
+
+                # Via offset from origin, then shifted by intersection point.
+                pt_via = Point(r * np.cos(th), r * np.sin(th))
+                pt_via += pt_intersect
+
+                # Check distance.
+                if vert_seg.DistToPoint(pt_via) < via_fit_tangential:
+                    via_fits = False
+                    continue
+
             # Outer Arc
             angle_start = np.arctan2(vert_end.y, vert_end.x)
             angle_end = np.arctan2(horiz_start.y, horiz_start.x)
@@ -2402,19 +2428,33 @@ class SectorCoil(Group):
         # that bisects the last two Segments added.
         # It'll be at a radial distance of the radius of the
         # last outside arc added, less the via_fit radius.
-        # segs = self.FindByClass(Segment)
-        # # pt_intersect = segs[-2].IntersectionPoint(segs[-1])
-        # th = (segs[-2].angle - segs[-1].angle) / 2
+        if have_inner_arc:
+            # For case where we have inner arc
+            arcs = self.FindByClass(Arc)
+            th = np.mean([arcs[-1].start, arcs[-1].end])
 
-        # For case where we have inner arc
-        arcs = self.FindByClass(Arc)
-        th = np.mean([arcs[-1].start, arcs[-1].end])
+            # Point for the via.
+            r = outer_arc.radius - self.spacing - self.dia_via / 2 - self.width / 2
+            # pt_via = Point(r * np.cos(th) + pt_intersect.x, r * np.sin(th) + pt_intersect.y)
+            pt_via = Point(r * np.cos(th), r * np.sin(th))
+        else:
+            # Now we need to make sure we get the last two segments and last arc _added_.
+            arc = self.FindByClass(Arc)[-1]
+            segs = self.FindByClass(Segment)
 
-        # Point for the via.
-        r = outer_arc.radius - self.spacing - self.dia_via / 2 - self.width / 2
-        # pt_via = Point(r * np.cos(th) + pt_intersect.x, r * np.sin(th) + pt_intersect.y)
-        pt_via = Point(r * np.cos(th), r * np.sin(th))
+            # Bisector angle is the mean vector angles of the Segments
+            th = np.mean([segs[-1].angle, segs[-2].angle])
 
+            # Radius from the intersection point to the via center,
+            # inset from OD.
+            pt_intersect = segs[-1].IntersectionPoint(segs[-2])
+            r = arc.radius - pt_intersect.magnitude - via_fit_tangential
+
+            # Via offset from origin, then shifted by intersection point.
+            pt_via = Point(r * np.cos(th), r * np.sin(th))
+            pt_via += pt_intersect
+
+        # Create the segment to the via.
         seg = Segment(
             start=copy.deepcopy(self.pointend),
             end=pt_via,
