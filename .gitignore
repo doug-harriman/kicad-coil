@@ -4,3 +4,4 @@ __pycache__
 # KiCAD
 *-backups
 fp-info-cache
+.kiri/
