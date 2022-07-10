@@ -650,7 +650,8 @@ class Segment(Track):
         """
 
         theta = np.arctan2(self.end.y - self.start.y, self.end.x - self.start.x)
-        if np.isclose(0, np.abs(theta) % np.pi):
+        rem = theta % np.pi
+        if np.isclose(0, rem) or np.isclose(theta / np.pi, 1):
             theta = 0
 
         return theta
@@ -2497,6 +2498,7 @@ class MultiPhaseCoil(Group):
         self._mount_hole = None
         self._mount_hole_pattern_diameter = 15
         self._mount_hole_pattern_angles = np.array([0, 120, 240]) * np.pi / 180
+        self._text_pattern_dia = None
 
     @property
     def layers(self) -> list:
@@ -2569,7 +2571,7 @@ class MultiPhaseCoil(Group):
         if len(value) < 2:
             raise ValueError("Net list length must be > 1: {value}")
         for el in value:
-            if not isinstance(el, int):
+            if not isinstance(el, (int, np.int32, np.int64)):
                 raise ValueError(f"All net IDs must be ints: {el}")
 
         self._nets = value
@@ -2814,6 +2816,40 @@ class MultiPhaseCoil(Group):
         self._mount_hole_pattern_diameter = value
 
     @property
+    def text_pattern_diameter(self) -> float:
+        """
+        Diameter of text label pattern.
+
+        Returns:
+            float: diameter.
+        """
+
+        return self._text_pattern_dia
+
+    @text_pattern_diameter.setter
+    def text_pattern_diameter(self, value: float = None) -> None:
+        """
+        Diameter of text label pattern.
+        Must be greater than coil outside diameter.
+
+        Args:
+            value (float, optional): Diameter of text pattern. Defaults to None.
+
+        Raises:
+            TypeError: Invalid type.  Must be float.
+            ValueError: Must be greater than outside diameter.
+        """
+
+        if value is None:
+            raise ValueError("No value provided.")
+        if not isinstance(value, float):
+            raise TypeError(f"Float expected, got: {type(value)}")
+        if value <= self.dia_outside:
+            raise ValueError(f"Text pattern diameter must be > coild outside diameter.")
+
+        self._text_pattern_dia = value
+
+    @property
     def mount_hole_pattern_angles(self) -> list:
         """
         List of angles at which to place mounting holes.
@@ -2915,8 +2951,10 @@ class MultiPhaseCoil(Group):
             t.Rotate(-np.pi / 2)
 
             # Push text to outside of coil
-            r = self._coil.dia_outside / 2
-            r += 2  # Space from coil to text
+            r = self._text_pattern_dia / 2
+            if r is None:
+                r = self._coil.dia_outside / 2
+                r += 2  # Space from coil to text
             t.Translate(r, 0)
 
             # Rotate text with coil
@@ -3046,12 +3084,8 @@ if __name__ == "__main__":
         c.mount_hole_pattern_diameter = c.dia_outside + hole.radius + 4
         c.mount_hole_pattern_angles = (np.array([0, 120, 240]) + 30) * np.pi / 180
 
-        c.Generate()
-        c.Translate(x=120, y=90)
-        print(c.ToKiCad())
-
     # 3-phase test, multiplicity 2
-    if False:
+    if True:
         c = MultiPhaseCoil()
         c.nets = [1, 2, 3]
         c.multiplicity = 2
@@ -3069,19 +3103,6 @@ if __name__ == "__main__":
         c.mount_hole_pattern_diameter = c.dia_outside + hole.radius + 4
         c.mount_hole_pattern_angles = (np.array([0, 120, 240]) + 30) * np.pi / 180
 
-        c.Generate()
-        c.Translate(x=120, y=90)
-        with open("tmp.txt", "w") as fp:
-            fp.write(c.ToKiCad())
-        # print(c.ToKiCad())
-
-        matches = c.FindByClass(GrText)
-        print(matches)
-        print(f"Count: {len(matches)}")
-
-        matches = c.FindByProperty("text", "PhA1")
-        print(matches)
-
     # 2-phase test, multiplicity 2
     if False:
         c = MultiPhaseCoil()
@@ -3094,14 +3115,8 @@ if __name__ == "__main__":
         c.spacing = spacing
         c.via = via
 
-        c.Generate()
-        # c.Translate(x=120, y=90)
-
-        with open("tmp.txt", "w") as fp:
-            fp.write(c.ToKiCad())
-
     # 2-phase test, multiplicity 4
-    if True:
+    if False:
         c = MultiPhaseCoil()
         c.nets = [1, 2]
         c.multiplicity = 4
@@ -3112,12 +3127,6 @@ if __name__ == "__main__":
         c.spacing = spacing
         c.via = via
 
-        c.Generate()
-        # c.Translate(x=120, y=90)
-
-        with open("tmp.txt", "w") as fp:
-            fp.write(c.ToKiCad())
-
     # Sector coil test
     if False:
         c = SectorCoil()
@@ -3127,8 +3136,12 @@ if __name__ == "__main__":
         c.dia_inside = 6
         c.dia_outside = 30
 
-        c.Generate()
-        print(c.ToKiCad())
+    # Write the file
+    c.Generate()
+    # c.Translate(x=120, y=90)
+
+    with open("tmp.txt", "w") as fp:
+        fp.write(c.ToKiCad())
 
     # Base geometry elements
     if False:
