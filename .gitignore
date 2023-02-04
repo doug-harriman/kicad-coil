@@ -5,3 +5,7 @@ __pycache__
 *-backups
 fp-info-cache
 .kiri/
+
+# Big files
+media/
+
