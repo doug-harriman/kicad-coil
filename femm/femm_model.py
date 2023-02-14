@@ -71,7 +71,7 @@ class Circuit:
                  current: Q = Q(1, 'A')):
 
         if model is None:
-            raise ValueError("Must provide Femm object as model.")
+            raise ValueError("Model not specified.")
 
         self._name = name
         self._current = current
@@ -152,6 +152,17 @@ class Track:
         femm.mi_setgroup(value)
         self._group = value
 
+    @property
+    def center(self) -> tuple:
+        """
+        Tuple of center coordinates.
+        """
+
+        x_c = np.mean([self._x1, self._x2])
+        y_c = np.mean([self._y1, self._y2])
+
+        return (Q(x_c, self._model.units), Q(y_c, self._model.units))
+
     def position_ll(self, x: Q = None, y: Q = None):
         """
         Sets object lower left corner to specified positions.
@@ -195,7 +206,6 @@ class Coil:
 
     def __init__(self,
                  model: Femm = None,
-                 name: str = 'coil1',
                  track_width: Q = Q(1, 'mm'),
                  track_spacing: Q = Q(1, 'mm'),
                  track_thickness: Q = Q(1, 'mm'),
@@ -209,35 +219,92 @@ class Coil:
             raise ValueError("Model not specified.")
         self._model = model
 
-        self._id = model.new_group_id()
-        print(f'Coil ID: {self._id}')
+        self._group = model.new_group_id()
+        print(f'Coil ID: {self._group}')
+
+        # Name the coil, but it's not user settable for now.
+        self._name = f'Coil_{self._group}'
+
+        # Create a circuit for the coil.
+        self._circuit = Circuit(model=model,
+                                name=f'Circuit_{self._name}',
+                                current=current)
 
         # Create an array of tracks.
-        conductors = []
+        self._conductors = []
+
         # Left side, from inside out.
         offset = x_center - track_width - dia_inside/2
         for i in np.arange(0, turns):
-            # Because
+            # Create and position track.
+            # Created at default position, well outside where we want it
+            # to avoid issues selecting geometry by position.
             track = Track(model=model,
                           width=track_width,
                           height=track_thickness)
-
             track.position_ll(x=offset, y=track_thickness/2)
-            offset -= (track_width + track_spacing)
 
-            conductors.append(track)
+            # Create FEMM label to mark material, circuit & turn count.
+            (xc, yc) = track.center
+            xc = xc.magnitude
+            yc = yc.magnitude
+            femm.mi_addblocklabel(xc, yc)
+            femm.mi_selectlabel(xc, yc)
+            femm.mi_setblockprop("Copper",  # Material to use.  Solid copper for a single trace.
+                                 1,         # Auto mesh size
+                                 .01,       # Mesh size.  Ignored for auto.
+                                 # Magnetization direction, ignored.
+                                 self._circuit.name,
+                                 0,
+                                 self._group,  # Belongs to coil group.
+                                 1)          # Number of turns
+
+            # Bookkeeping
+            offset -= (track_width + track_spacing)
+            self._conductors.append(track)
 
         # Right side, from inside out
         offset = x_center + dia_inside/2
         for i in np.arange(0, turns):
+            # Create and position track.
             track = Track(model=model,
                           width=track_width,
                           height=track_thickness)
-
             track.position_ll(x=offset, y=track_thickness/2)
-            offset += track_width + track_spacing
 
-            conductors.append(track)
+            # Create FEMM label to mark material, circuit & turn count.
+            (xc, yc) = track.center
+            xc = xc.magnitude
+            yc = yc.magnitude
+            femm.mi_addblocklabel(xc, yc)
+            femm.mi_selectlabel(xc, yc)
+            femm.mi_setblockprop("Copper",  # Material to use.  Solid copper for a single trace.
+                                 1,         # Auto mesh size
+                                 .01,       # Mesh size.  Ignored for auto.
+                                 # Magnetization direction, ignored.
+                                 self._circuit.name,
+                                 0,
+                                 self._group,  # Belongs to coil group.
+                                 -1)          # Number of turns, opposite direction
+
+            # Bookkeeping
+            offset += track_width + track_spacing
+            self._conductors.append(track)
+
+    @property
+    def group(self) -> int:
+        """
+        Coil group ID.
+        """
+
+        return self._group
+
+    @property
+    def name(self) -> str:
+        """
+        Coil name (read only)
+        """
+        return self._name
 
 
 if __name__ == "__main__":
@@ -246,9 +313,9 @@ if __name__ == "__main__":
 
     # Test Coil
     track_thickness = Q(34.8, 'um')
-    track_spacing = Q(6, 'milliinch').to('mm')
+    track_spacing = Q(6, 'milliinch')
     track_width = track_spacing
-    dia_inside = Q(2, 'mm')
+    dia_inside = 4*track_spacing
 
     coil = Coil(model=model,
                 turns=12,
