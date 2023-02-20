@@ -7,17 +7,18 @@
 # Tracks doc:
 # URL: https://dev-docs.kicad.org/en/file-formats/sexpr-pcb/#_graphic_items_section:~:text=on%20the%20board.-,Tracks%20Section,-This%20section%20lists
 
-
+# TODO: Backside coil needs to have rotation direction flipped.  As coded, fields cancel.
 from __future__ import annotations
-
 import copy
 import logging
 import os
 import uuid
 import warnings
 from typing import Tuple
-
 import numpy as np
+print(
+    "WARNING: 2-sided coils will cancel due to incorrect coil rotation direction on back side", flush=True)
+
 
 # KiCAD Python
 # pip install kicad_python
@@ -220,7 +221,8 @@ class Point:
 
         # Rotate
         v = np.array([self._x, self._y])
-        R = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+        R = np.array([[np.cos(angle), -np.sin(angle)],
+                     [np.sin(angle), np.cos(angle)]])
         v = R.dot(v)
 
         self._x = v[0]
@@ -556,7 +558,8 @@ class Segment(Track):
         if value is None:
             value = Point(0, 1)
         if not isinstance(value, Point):
-            raise TypeError(f"Expected value of type point, not: {type(value)}")
+            raise TypeError(
+                f"Expected value of type point, not: {type(value)}")
         self._start = value  # Have our own point.
 
     @property
@@ -584,7 +587,8 @@ class Segment(Track):
         if value is None:
             value = Point(0, 1)
         if not isinstance(value, Point):
-            raise TypeError(f"Expected value of type point, not: {type(value)}")
+            raise TypeError(
+                f"Expected value of type point, not: {type(value)}")
         self._end = value  # Have our own point.
 
     @property
@@ -649,7 +653,8 @@ class Segment(Track):
             float: Angle of rotation of segment from horizontal.
         """
 
-        theta = np.arctan2(self.end.y - self.start.y, self.end.x - self.start.x)
+        theta = np.arctan2(self.end.y - self.start.y,
+                           self.end.x - self.start.x)
         rem = theta % np.pi
         if np.isclose(0, rem) or np.isclose(theta / np.pi, 1):
             theta = 0
@@ -688,8 +693,10 @@ class Segment(Track):
             warnings.warn("Parallel segments, no intersection point.")
             return None
 
-        x_num = (x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)
-        y_num = (x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)
+        x_num = (x1 * y2 - y1 * x2) * (x3 - x4) - \
+            (x1 - x2) * (x3 * y4 - y3 * x4)
+        y_num = (x1 * y2 - y1 * x2) * (y3 - y4) - \
+            (y1 - y2) * (x3 * y4 - y3 * x4)
 
         return Point(x_num / den, y_num / den)
 
@@ -796,7 +803,8 @@ class Segment(Track):
         """
 
         return np.sqrt(
-            (self._start.x - self._end.x) ** 2 + (self._start.y - self._end.y) ** 2
+            (self._start.x - self._end.x) ** 2 +
+            (self._start.y - self._end.y) ** 2
         )
 
 
@@ -862,7 +870,8 @@ class Arc(Track):
         if value is None:
             value = Point(0, 1)
         if not isinstance(value, Point):
-            raise TypeError(f"Expected value of type point, not: {type(value)}")
+            raise TypeError(
+                f"Expected value of type point, not: {type(value)}")
         self._center = value  # Have our own point.
 
     @property
@@ -1101,7 +1110,7 @@ class Arc(Track):
         Suitable for plotting.
         """
 
-        d_theta = np.diff(self._end - self._start) / n
+        d_theta = (self._end - self._start) / n
 
         theta = np.arange(self._start, self._end, d_theta)
         x = self._radius * np.cos(theta)
@@ -1371,7 +1380,8 @@ class GrText:
         s = (
             f"{indent}"
             f'(gr_text "{self.text}" '
-            f"(at {self.position.ToKiCad()} {self.angle*180/np.pi:0.3f}) "  # GrText angle in deg
+            # GrText angle in deg
+            f"(at {self.position.ToKiCad()} {self.angle*180/np.pi:0.3f}) "
             f'(layer "{self._layer}") '
             f"(tstamp {str(self.id)})"
             f"{os.linesep}"
@@ -1574,7 +1584,8 @@ class GrCircle:
         size_orig = value
         size = float(value)
         if size <= 0.0:
-            raise ValueError(f"GrCircle line width must be positive: {size_orig}")
+            raise ValueError(
+                f"GrCircle line width must be positive: {size_orig}")
 
         self._width = size
 
@@ -1635,7 +1646,8 @@ class Group:
                 try:
                     self.AddMember(member)
                 except TypeError:
-                    warnings.warn(f'Skipping member with no "id" attribute: {member}')
+                    warnings.warn(
+                        f'Skipping member with no "id" attribute: {member}')
 
     def __repr__(self):
         return self.ToKiCad()
@@ -2468,6 +2480,33 @@ class SectorCoil(Group):
         # Reprocess geometry adding center offsets.
         self.Translate(self._center.x, self._center.y)
 
+    def ToNumpy(self, n: int = 100) -> Tuple:
+        """
+        Generates a tuple of arrays of start and end points of linear segments
+        that make up the SectorCoil.
+
+        Args:
+            n (int, optional): Segment count for Arc conversion. Defaults to 100.
+
+        Returns:
+            Tuple: (np.array(<segment start>),np.array(<segment end>))
+        """
+
+        start = np.array([])
+        end = np.array([])
+        for m in self._members:
+            if isinstance(m, Arc):
+                pts = m.ToNumpy(n=n)
+            elif isinstance(m, Segment):
+                pts = m.ToNumpy()
+            else:
+                raise TypeError(f"Unssupported Track type: {type(m)}")
+
+            start = np.append(start, pts[0])
+            end = np.append(end, pts[1])
+
+        return (start, end)
+
 
 class MultiPhaseCoil(Group):
     """
@@ -2714,7 +2753,8 @@ class MultiPhaseCoil(Group):
         """
 
         if not isinstance(value, Via):
-            raise TypeError(f"Expecting object of type Via. Got: {type(value)}")
+            raise TypeError(
+                f"Expecting object of type Via. Got: {type(value)}")
 
         # TODO: Search all generated geometry and replace with new via type.
         #      Update documentation block.
@@ -2811,7 +2851,8 @@ class MultiPhaseCoil(Group):
 
         value = float(value)
         if value <= 0:
-            raise ValueError(f"Mounting hole pattern diameteter must be >0: {value}")
+            raise ValueError(
+                f"Mounting hole pattern diameteter must be >0: {value}")
 
         self._mount_hole_pattern_diameter = value
 
@@ -2845,7 +2886,8 @@ class MultiPhaseCoil(Group):
         if not isinstance(value, float):
             raise TypeError(f"Float expected, got: {type(value)}")
         if value <= self.dia_outside:
-            raise ValueError(f"Text pattern diameter must be > coild outside diameter.")
+            raise ValueError(
+                f"Text pattern diameter must be > coild outside diameter.")
 
         self._text_pattern_dia = value
 
@@ -3048,7 +3090,7 @@ class MultiPhaseCoil(Group):
             self.AddMember(g)
 
 
-#%%
+# %%
 if __name__ == "__main__":
 
     from pint import Quantity as Q
@@ -3063,7 +3105,8 @@ if __name__ == "__main__":
 
     # Tracks
     width = Q(8e-3, "in").to("mm").magnitude
-    spacing = Q(6e-3, "in").to("mm").magnitude  # PCBWay min spacing for cheap boards
+    # PCBWay min spacing for cheap boards
+    spacing = Q(6e-3, "in").to("mm").magnitude
 
     # 3-phase test, multiplicity 1
     if False:
@@ -3082,7 +3125,8 @@ if __name__ == "__main__":
         # c.center_hole = hole
         c.mount_hole = hole
         c.mount_hole_pattern_diameter = c.dia_outside + hole.radius + 4
-        c.mount_hole_pattern_angles = (np.array([0, 120, 240]) + 30) * np.pi / 180
+        c.mount_hole_pattern_angles = (
+            np.array([0, 120, 240]) + 30) * np.pi / 180
 
     # 3-phase test, multiplicity 2
     if True:
@@ -3101,7 +3145,8 @@ if __name__ == "__main__":
         # c.center_hole = hole
         c.mount_hole = hole
         c.mount_hole_pattern_diameter = c.dia_outside + hole.radius + 4
-        c.mount_hole_pattern_angles = (np.array([0, 120, 240]) + 30) * np.pi / 180
+        c.mount_hole_pattern_angles = (
+            np.array([0, 120, 240]) + 30) * np.pi / 180
 
     # 2-phase test, multiplicity 2
     if False:

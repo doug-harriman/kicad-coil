@@ -88,6 +88,9 @@ class Circuit:
         return self._current
 
 
+# TODO: Create Rect base class.
+# TODO: Make Track derive from Rect.
+# TODO: Create Magnet that derives from Rect.
 class Track:
     def __init__(self,
                  model: Femm = None,
@@ -163,9 +166,20 @@ class Track:
 
         return (Q(x_c, self._model.units), Q(y_c, self._model.units))
 
-    def position_ll(self, x: Q = None, y: Q = None):
+    @property
+    def bbox(self) -> tuple:
+        """
+        Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
+        bounding box lower left corner and x2,y2 represents the 
+        bounding box upper right corner.
+        """
+
+        return (self._x1, self._y1, self._x2, self._y2)
+
+    def position_ll_set(self, x: Q = None, y: Q = None):
         """
         Sets object lower left corner to specified positions.
+        If x or y position is not specified, that coordinate is not changed.
         """
 
         # Unit conversions.
@@ -184,9 +198,12 @@ class Track:
 
         self.translate(dx, dy)
 
+    # TODO: Add position_center_set()
+
     def translate(self, dx: Q = Q(0, 'mm'), dy: Q = Q(0, 'mm')):
         """
         Translates object specified distances in X & Y.
+        If dx or dy is not specified, that coordinate is not changed.
         """
 
         dx = dx.to(self._model.units).to('mm').magnitude
@@ -226,6 +243,7 @@ class Coil:
         self._name = f'Coil_{self._group}'
 
         # Create a circuit for the coil.
+        # TODO: How to deal with next coil, with opposite current.
         self._circuit = Circuit(model=model,
                                 name=f'Circuit_{self._name}',
                                 current=current)
@@ -242,7 +260,8 @@ class Coil:
             track = Track(model=model,
                           width=track_width,
                           height=track_thickness)
-            track.position_ll(x=offset, y=track_thickness/2)
+            track.position_ll_set(x=offset, y=track_thickness/2)
+            # TODO: Put track into the coil's group.
 
             # Create FEMM label to mark material, circuit & turn count.
             (xc, yc) = track.center
@@ -270,7 +289,7 @@ class Coil:
             track = Track(model=model,
                           width=track_width,
                           height=track_thickness)
-            track.position_ll(x=offset, y=track_thickness/2)
+            track.position_ll_set(x=offset, y=track_thickness/2)
 
             # Create FEMM label to mark material, circuit & turn count.
             (xc, yc) = track.center
@@ -306,6 +325,27 @@ class Coil:
         """
         return self._name
 
+    @property
+    def bbox(self) -> tuple:
+        """
+        Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
+        bounding box lower left corner and x2,y2 represents the 
+        bounding box upper right corner.
+        """
+
+        x1 = np.Inf
+        y1 = np.Inf
+        x2 = -x1
+        y2 = -y1
+        for track in self._conductors:
+            bb = track.bbox
+            x1 = np.min([x1, bb[0]])
+            y1 = np.min([y1, bb[1]])
+            x2 = np.max([x2, bb[2]])
+            y2 = np.max([y2, bb[3]])
+
+        return (x1, y1, x2, y2)
+
 
 if __name__ == "__main__":
 
@@ -315,7 +355,7 @@ if __name__ == "__main__":
     track_thickness = Q(34.8, 'um')
     track_spacing = Q(6, 'milliinch')
     track_width = track_spacing
-    dia_inside = 4*track_spacing
+    dia_inside = Q(1.6, 'mm')  # Measured from KiCAD PCB
 
     coil = Coil(model=model,
                 turns=12,
@@ -324,7 +364,38 @@ if __name__ == "__main__":
                 track_spacing=track_spacing,
                 dia_inside=dia_inside)
 
+    # -----------------------------------------------------------------
+    # Generate the boundary conditions.
+    # -----------------------------------------------------------------
+    # TODO: if all children of the model can have a bbox prop,
+    #       then we can create a boundary class that can find the
+    #       boundary size automatically.
+    bc_group = model.new_group_id()
+    bb = coil.bbox
+    x_c = np.mean([bb[0], bb[2]])
+    y_c = np.mean([bb[1], bb[3]])
+    r = np.linalg.norm([x_c - bb[0], y_c - bb[1]])
+
+    femm.mi_makeABC(7,  # Number of shells for boundary.  7 is standard.
+                    r*1.5,  # Radius of boundary shell circle
+                    x_c, y_c,  # Center of boundary shell circle
+                    0)  # Boundary condition: 0=Dirichlet, 1=Neumann
+    y_l = y_c+r*1.45
+    femm.mi_addblocklabel(x_c, y_l)
+    femm.mi_selectlabel(x_c, y_l)
+    femm.mi_setblockprop("Air",
+                         1,  # Auto mesh
+                         0.01,  # Mesh size, not used.
+                         "",  # Circuit name.  ""=No circuit
+                         0,  # Magnetization dir, ignored.
+                         bc_group)
+
+    # TODO: Add in magnet.
+
     femm.mi_saveas('test.FEM')
+
+    # TODO: Run sim
+    # TODO: Gather results
 
     # import time
     # time.sleep(10)
