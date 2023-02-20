@@ -3,9 +3,9 @@
 6mm dia x 2mm thick disk magnet, axially magnetized.
 
 Max field (at surface, center)
-N35 - 3355 GS (82% of N52)
-N42 - 3660 GS (89% of N52)
-N52 - 4100 GS
+- N35 - 3355 GS (82% of N52)
+- N42 - 3660 GS (89% of N52)
+- N52 - 4100 GS
 
 ## Hall Effect Sensors
 
@@ -14,6 +14,7 @@ Sensitivity
 - 49E: 1.6 mV/GS
 
 > **Note** 
+>
 > Units: 1 mT = 10 G
 
 Voltage measurement range: ±2.5V off of a 2.5V nominal output with no field.
