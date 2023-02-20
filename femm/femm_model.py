@@ -38,6 +38,9 @@ class Femm:
         for matl in matl_list:
             femm.mi_getmaterial(matl)
 
+        # Boundary
+        self._boundary_group = None
+
     @property
     def units(self) -> str:
 
@@ -50,6 +53,65 @@ class Femm:
 
         self._next_group_id += 1
         return self._next_group_id
+
+    def boundary_generate(self,
+                          xc: Q = Q(0, 'mm'),
+                          yc: Q = Q(0, 'mm'),
+                          radius: Q = Q(50, 'mm')) -> None:
+        """
+        Generates boundary conditions.
+        NOTE: Can only be run once per model.
+
+        Args:
+            xc (Q, optional): X coord of center of circular boundary. Defaults to Q(0,'mm').
+            yc (Q, optional): Y coord of center of circular boundary. Defaults to Q(0,'mm').
+            radius (Q, optional): Radius of circular boundary. Defaults to Q(50,'mm').
+
+        Raises:
+            ValueError: Boundary condition already exists.
+        """
+
+        # TODO: Support deletion and re-creation of boundary group.
+        if self._boundary_group is not None:
+            raise ValueError("Boundary condition specification exists.")
+
+        # Handle units if provided
+        if isinstance(xc, Q):
+            xc = xc.to(self._units).magnitude
+        if isinstance(yc, Q):
+            yc = yc.to(self._units).magnitude
+        if isinstance(radius, Q):
+            radius = radius.to(self._units)
+
+        self._boundary_group = model.new_group_id()
+
+        femm.mi_makeABC(7,       # Number of shells for boundary.  7 is standard.
+                        radius,  # Radius of boundary shell circle
+                        xc,      # Center of boundary shell circle
+                        yc,
+                        0)       # Boundary condition: 0=Dirichlet, 1=Neumann
+
+        # Fill in boundary zone with Air
+        y_l = yc+radius*0.95     # Place label just inside boundary.
+        femm.mi_addblocklabel(xc, y_l)
+        femm.mi_selectlabel(xc, y_l)
+        femm.mi_setblockprop("Air",
+                             1,     # Auto mesh
+                             0.01,  # Mesh size, not used.
+                             "",    # Circuit name.  "" => No circuit
+                             0,     # Magnetization dir, ignored.
+                             self._boundary_group)
+
+    @property
+    def boundary_group(self) -> int:
+        """
+        Boundary group ID.
+
+        Returns:
+            int: Group ID of boundary conditions.
+        """
+
+        return self._boundary_group
 
     def _circuit_add(self, circuit=None):
         """Adds name of circuit to list for tracking.
@@ -88,13 +150,13 @@ class Circuit:
         return self._current
 
 
-# TODO: Create Rect base class.
-# TODO: Make Track derive from Rect.
-# TODO: Create Magnet that derives from Rect.
-class Track:
+class Rect:
+    """
+    Base class for geometric manipulation.
+    """
+
     def __init__(self,
                  model: Femm = None,
-                 circuit: Circuit = None,
                  width: Q = Q(1, 'mm'),
                  height: Q = Q(1, 'mm'),
                  x: Q = None,
@@ -112,12 +174,12 @@ class Track:
         self._x2 = self._x1 + width.to(model.units).magnitude
         self._y1 = y.to(model.units).magnitude
         self._y2 = self._y1 + height.to(model.units).magnitude
-        self._group = None
 
         femm.mi_clearselected()
         femm.mi_drawrectangle(self._x1, self._y1, self._x2, self._y2)
-        self.select_by_rect()
-        self.group = model.new_group_id()
+
+        self._group = None
+        self.group = model.new_group_id()  # Use the method to take care of the details
 
         self._model = model
 
@@ -129,12 +191,13 @@ class Track:
         femm.mi_selectrectangle(
             self._x1, self._y1, self._x2, self._y2, mode)
 
-    def select_by_id(self):
+    def select_by_group(self):
         """
         Selects object by its group ID.
         Object is given an ID upon creation for selection.
         If group ID is changed, this method will select everything in the group.
         """
+        femm.mi_selectgroup(self._group)
 
     @property
     def group(self):
@@ -174,7 +237,7 @@ class Track:
         bounding box upper right corner.
         """
 
-        return (self._x1, self._y1, self._x2, self._y2)
+        return Q([self._x1, self._y1, self._x2, self._y2], self._model.units)
 
     def position_ll_set(self, x: Q = None, y: Q = None):
         """
@@ -209,7 +272,7 @@ class Track:
         dx = dx.to(self._model.units).to('mm').magnitude
         dy = dy.to(self._model.units).to('mm').magnitude
 
-        self.select_by_rect()
+        self.select_by_group()
         femm.mi_movetranslate(dx, dy)
 
         # Update internal data
@@ -217,6 +280,33 @@ class Track:
         self._x2 += dx
         self._y1 += dy
         self._y2 += dy
+
+
+# TODO: Handled magnet material and magnetization direction
+class Magnet(Rect):
+    def __init__(self,
+                 model: Femm = None,
+                 width: Q = Q(1, 'mm'),
+                 height: Q = Q(1, 'mm'),
+                 x: Q = None,
+                 y: Q = None):
+
+        # Init Rect
+        super().__init__(model, width, height, x, y)
+
+
+# TODO: Handle circuit within the Track
+class Track(Rect):
+    def __init__(self,
+                 model: Femm = None,
+                 circuit: Circuit = None,
+                 width: Q = Q(1, 'mm'),
+                 height: Q = Q(1, 'mm'),
+                 x: Q = None,
+                 y: Q = None):
+
+        # Init the Rect
+        super().__init__(model, width, height, x, y)
 
 
 class Coil:
@@ -333,18 +423,18 @@ class Coil:
         bounding box upper right corner.
         """
 
-        x1 = np.Inf
-        y1 = np.Inf
+        x1 = Q(np.Inf, self._model.units)
+        y1 = Q(np.Inf, self._model.units)
         x2 = -x1
         y2 = -y1
         for track in self._conductors:
             bb = track.bbox
-            x1 = np.min([x1, bb[0]])
-            y1 = np.min([y1, bb[1]])
-            x2 = np.max([x2, bb[2]])
-            y2 = np.max([y2, bb[3]])
+            x1 = min([x1, bb[0]])
+            y1 = min([y1, bb[1]])
+            x2 = max([x2, bb[2]])
+            y2 = max([y2, bb[3]])
 
-        return (x1, y1, x2, y2)
+        return [x1, y1, x2, y2]
 
 
 if __name__ == "__main__":
@@ -352,6 +442,8 @@ if __name__ == "__main__":
     model = Femm()
 
     # Test Coil
+    # PCB design limit info:
+    # https://github.com/doug-harriman/kicad-coil/blob/main/design-info.md
     track_thickness = Q(34.8, 'um')
     track_spacing = Q(6, 'milliinch')
     track_width = track_spacing
@@ -371,24 +463,11 @@ if __name__ == "__main__":
     #       then we can create a boundary class that can find the
     #       boundary size automatically.
     bc_group = model.new_group_id()
-    bb = coil.bbox
-    x_c = np.mean([bb[0], bb[2]])
-    y_c = np.mean([bb[1], bb[3]])
-    r = np.linalg.norm([x_c - bb[0], y_c - bb[1]])
-
-    femm.mi_makeABC(7,  # Number of shells for boundary.  7 is standard.
-                    r*1.5,  # Radius of boundary shell circle
-                    x_c, y_c,  # Center of boundary shell circle
-                    0)  # Boundary condition: 0=Dirichlet, 1=Neumann
-    y_l = y_c+r*1.45
-    femm.mi_addblocklabel(x_c, y_l)
-    femm.mi_selectlabel(x_c, y_l)
-    femm.mi_setblockprop("Air",
-                         1,  # Auto mesh
-                         0.01,  # Mesh size, not used.
-                         "",  # Circuit name.  ""=No circuit
-                         0,  # Magnetization dir, ignored.
-                         bc_group)
+    bb = [x.magnitude for x in coil.bbox]
+    xc = np.mean([bb[0], bb[2]])
+    yc = np.mean([bb[1], bb[3]])
+    r = 2*np.linalg.norm([xc - bb[0], yc - bb[1]])
+    model.boundary_generate(xc=xc, yc=yc, radius=r)
 
     # TODO: Add in magnet.
 
