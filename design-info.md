@@ -4,15 +4,19 @@
 6mm dia x 2mm thick disk magnet, axially magnetized.
 
 Max field (at surface, center)
-- N35 - 3355 GS (82% of N52)
-- N42 - 3660 GS (89% of N52)
-- N52 - 4100 GS
+
+|Grade| Field Strength [GS] | Relative to N52 |
+| :-: | :-: | :-: |
+| N35 | 3355 | 82% |
+| N42 | 3660 | 89% |
+| N52 | 4100 |  - |
 
 ### Hall Effect Sensors
 
-Sensitivity
-- A1302: 1.3 mV/GS -> 13 mV/mT
-- 49E: 1.6 mV/GS -> 16 mV/mT
+| Sensor | Sensitivity [mV/GS] | Sensitivity [mV/mT] |
+| :-: | :-: | :-: |
+| A1302| 1.3 | 13 |
+| 49E| 1.6 | 16 |
 
 > **Note** 
 >
@@ -30,19 +34,19 @@ Voltage measurement range: ±2.5V off of a 2.5V nominal output with no field.
 
 Copper weight an min trace thickness & spacing (same value) per [PCB Way](https://www.pcbway.com/).
 
-|Copper Weight (oz)| Minimum Space [mils]|
-| :-: | :-: |
-|0.5|	3|
-|1|	3|
-|2|	6.5|
-|3|	10|
-|4|	13|
-|5|18|
-|6|18|
-|7|23|
-|8|24|
-|9|25|
-|10|31.5|
+|Copper Weight (oz)| Minimum Space [mils]| Copper Thickness [um]|
+| :-: | :-: | :-: | 
+|0.5|	3| |
+|1|	3| 34.80 |
+|2|	6.5| 69.60|
+|3|	10| 104.39
+|4|	13| 139.19|
+|5|18| 179.99 |
+|6|18| 208.79|
+|7|23| 243.59|
+|8|24| 278.38|
+|9|25| 313.18
+|10|31.5||
 
 There are various PCB trace temperature rise calculators available that take track width, copper thickness and trace current as inputs.  Good information from Proto Express:
 
@@ -62,6 +66,8 @@ FR4 thermal properties
 
 - [ ] FEMM model prediction for force for unit depth rectangular circuit.
 - [ ] Trade curves for different PCB geometry (id, od, trace width/spacing) based on available magnet sizes.
+- [ ] Impact of Iron on top of magnets.  Trade of magnet/iron thickness ratio vs. overall thickness.
+- [ ] Km vs. trace width/spacing and vs. PCB layer count for a given ID/OD, and for viable OD's based on available magnets.
 - [ ] FEMM model field vs. Hall measured field -> first pass geometric field correction factor.
     - Geometric errors
         - Magnets are round
