@@ -31,7 +31,7 @@ Voltage measurement range: ±2.5V off of a 2.5V nominal output with no field.
 Copper weight an min trace thickness & spacing (same value) per [PCB Way](https://www.pcbway.com/).
 
 |Copper Weight (oz)| Minimum Space [mils]|
-| --- | --- |
+| :-: | :-: |
 |0.5|	3|
 |1|	3|
 |2|	6.5|
