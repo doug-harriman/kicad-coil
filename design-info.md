@@ -5,7 +5,7 @@
 
 Max field (at surface, center)
 
-|Grade| Field Strength [GS] | Relative to N52 |
+|Grade| Field Strength</br>[GS] | Relative to N52 |
 | :-: | :-: | :-: |
 | N35 | 3355 | 82% |
 | N42 | 3660 | 89% |
@@ -13,7 +13,7 @@ Max field (at surface, center)
 
 ### Hall Effect Sensors
 
-| Sensor | Sensitivity [mV/GS] | Sensitivity [mV/mT] |
+| Sensor | Sensitivity</br>[mV/GS] | Sensitivity</br>[mV/mT] |
 | :-: | :-: | :-: |
 | A1302| 1.3 | 13 |
 | 49E| 1.6 | 16 |
@@ -28,13 +28,13 @@ Voltage measurement range: ±2.5V off of a 2.5V nominal output with no field.
 - FEMM estimates ~3.5 mT for a single coil, 1 mm deep, 1A current 
 - Center coil dia is ~1.4 mm across
 - Was running stepper driver at 600 mA
-- MagPyLib was estimating 2x coils (top + bottom) => ~2x the field.
+- MagPyLib was estimating 2x coils (top + bottom) → ~2x the field.
 
 ### Trace Width Limits
 
 Copper weight an min trace thickness & spacing (same value) per [PCB Way](https://www.pcbway.com/).
 
-|Copper Weight (oz)| Minimum Space [mils]| Copper Thickness [um]|
+|Copper Weight</br>(oz)| Minimum Space</br>[mils]| Copper Thickness</br>[um]|
 | :-: | :-: | :-: | 
 |0.5|	3| |
 |1|	3| 34.80 |
@@ -55,12 +55,15 @@ There are various PCB trace temperature rise calculators available that take tra
 - [Thermal Properties of Substrates](https://www.protoexpress.com/blog/comparing-the-manufacturability-of-pcb-laminates/)
 
 FR4 thermal properties
-* Conductivity (X&Y axes): 0.9 W/(m-K)
-* Conductivity (Z axes): 0.3 W/(m-K)
-* Expansion (X&Y axes): 13 ppm/K
-* Expansion (Z axes): 70 ppm/K
-* Glass transition temperature: 135 to 170 deg C
-* Specific heat capacity: 1110 J/(kg-deg C)
+
+| Property | Axes | Value | Units |
+| :- | :-: | :-: | :-: | 
+| Conductivity| X & Y| 0.9| W/(m∙K)|
+| Conductivity| Z | 0.3 |W/(m∙K)|
+| Expansion| X & Y| 13 |ppm/K|
+| Expansion| Z |  70 |ppm/K|
+| Glass transition temperature|-| 135 to 170 |°C|
+| Specific heat capacity| - | 1110 |J/(kg∙°C)|
 
 ## Design Questions
 
@@ -68,11 +71,11 @@ FR4 thermal properties
 - [ ] Trade curves for different PCB geometry (id, od, trace width/spacing) based on available magnet sizes.
 - [ ] Impact of Iron on top of magnets.  Trade of magnet/iron thickness ratio vs. overall thickness.
 - [ ] Km vs. trace width/spacing and vs. PCB layer count for a given ID/OD, and for viable OD's based on available magnets.
-- [ ] FEMM model field vs. Hall measured field -> first pass geometric field correction factor.
+- [ ] FEMM model field vs. Hall measured field → first pass geometric field correction factor.
     - Geometric errors
         - Magnets are round
         - Coil conductors are parallel to each other for maximum packing factor, but do not intersect the center of rotation.
-        - Could update FEMM model to look at tangential slice => each coil would have different width and spacing.
+        - Could update FEMM model to look at tangential slice → each coil would have different width and spacing.
     - Future: ELMER for true geometric impact assessment.
 - [ ] Hall measured field for magnets, estimate magnet type based on field & distance.
 - [ ] Optimal magnet spacing (tangentially) for rotor to inform next design.
