@@ -10,6 +10,7 @@ class Femm:
         self._next_group_id = 0
 
         # Open Femm and a model file.
+        # femm.openfemm(0)  # 0=Show GUI, 1=Hide GUI
         femm.openfemm(1)  # 0=Show GUI, 1=Hide GUI
         femm.newdocument(0)  # 0=Magnetics problem
 
@@ -37,14 +38,38 @@ class Femm:
         matl_list = [matl_mag, matl_coil, matl_air]
         for matl in matl_list:
             femm.mi_getmaterial(matl)
+        self._materials = matl_list
 
         # Boundary
         self._boundary_group = None
+
+        # Model file name
+        # TODO: Make property & handle.
+        self._filename_model = 'test.FEM'
+
+        # Model state tracking
+        self._mesh_is_dirty = True      # Geometry has changed
+        self._solution_is_dirty = True  # Need to rerun analysis
+
+        # FEMM variable ID dictionairies.
+        self._block_integral_vars = {'Force from Stress Tensor - X': 18,
+                                     'Force from Stress Tensor - Y': 19}
 
     @property
     def units(self) -> str:
 
         return self._units
+
+    @property
+    def materials(self) -> list:
+        """
+        List of materials defined for use in model.
+
+        Returns:
+            list: List of materials defined in model.
+        """
+
+        return self._materials
 
     def new_group_id(self) -> int:
         """
@@ -101,6 +126,38 @@ class Femm:
                              "",    # Circuit name.  "" => No circuit
                              0,     # Magnetization dir, ignored.
                              self._boundary_group)
+
+    def mesh_generate(self) -> None:
+        """
+        Generates mesh for model.
+        NOTE: model must be saved first.
+
+        Returns:
+            None.
+        """
+
+        if self._boundary_group is None:
+            raise RuntimeError(
+                'Model does not have boundary, run boundary_generate')
+
+        self._solution_is_dirty = True
+        print('Generating mesh ... ', end="", flush=True)
+        femm.mi_saveas(self._filename_model)
+        femm.mi_createmesh()
+        print('done', flush=True)
+
+    def analyze(self):
+
+        # Remesh if needed
+        if self._mesh_is_dirty:
+            self.mesh_generate()
+
+        print('Running FEMM analysis ... ', end="", flush=True)
+        femm.mi_analyze()
+        femm.mi_loadsolution()
+        print('done', flush=True)
+
+        self._solution_is_dirty = False
 
     @property
     def boundary_group(self) -> int:
@@ -182,6 +239,7 @@ class Rect:
         self.group = model.new_group_id()  # Use the method to take care of the details
 
         self._model = model
+        self._model._mesh_is_dirty = True
 
     def select_by_rect(self):
         """
@@ -227,7 +285,7 @@ class Rect:
         x_c = np.mean([self._x1, self._x2])
         y_c = np.mean([self._y1, self._y2])
 
-        return (Q(x_c, self._model.units), Q(y_c, self._model.units))
+        return Q([x_c, y_c], self._model.units)
 
     @property
     def bbox(self) -> tuple:
@@ -261,6 +319,8 @@ class Rect:
 
         self.translate(dx, dy)
 
+        self._model._mesh_is_dirty = True
+
     # TODO: Add position_center_set()
 
     def translate(self, dx: Q = Q(0, 'mm'), dy: Q = Q(0, 'mm')):
@@ -281,21 +341,171 @@ class Rect:
         self._y1 += dy
         self._y2 += dy
 
+        self._model._mesh_is_dirty = True
 
-# TODO: Handled magnet material and magnetization direction
+
 class Magnet(Rect):
+    """
+    FEMM model Magnet object.
+    """
+
     def __init__(self,
                  model: Femm = None,
                  width: Q = Q(1, 'mm'),
                  height: Q = Q(1, 'mm'),
                  x: Q = None,
-                 y: Q = None):
+                 y: Q = None,
+                 material: str = "N52",
+                 angle: Q = Q(90, 'deg')):
+        """
+        Magnet constructor.
+
+        NOTE: Recommend that x & y params are left at default.
+              Place the magnet after creation.
+
+        Args:
+            model (Femm): FEMM model to which magnet belongs.
+            width (Q, optional): Width of magnet. Defaults to Q(1, 'mm').
+            height (Q, optional): Height of magnet. Defaults to Q(1, 'mm').
+            x (Q, optional): X coord of create position. Defaults to None.
+            y (Q, optional): Y coord of create positoin. Defaults to None.
+            material (str, optional): Magnetic material. Defaults to "N52".
+            angle (Q, optional): Magnitization direction. Defaults to Q(90, 'deg').
+        """
 
         # Init Rect
         super().__init__(model, width, height, x, y)
 
+        # Magnet stuff
+        self._material = None
+        self.material = material
+
+        # Magnitization direction
+        self._angle = None
+        self.angle = angle
+
+        # Magnet material label
+        (x, y) = [n.magnitude for n in self.center]
+        femm.mi_addblocklabel(x, y)
+        femm.mi_selectlabel(x, y)
+        femm.mi_setblockprop(self.material,
+                             1,     # Auto mesh
+                             0.01,  # Mesh size, not used.
+                             "",    # Circuit name.  "" => No circuit
+                             # Magnetization dir.
+                             self.angle.to('deg').magnitude,
+                             self.group)
+
+    @property
+    def material(self) -> str:
+        """
+        Magnet material.
+
+        Returns:
+            str: Magnet material.
+        """
+
+        return self._material
+
+    @material.setter
+    def material(self, value: str = None) -> None:
+        """
+        Sets magnetic material.
+
+        Args:
+            value (str): Material property name per FEMM.
+
+        Raises:
+            ValueError: No material specified.
+
+        Returns:
+            None.
+        """
+
+        if value is None:
+            raise ValueError('No magenet material specified.')
+
+        matls = self._model.materials
+        if value not in matls:
+            raise ValueError(
+                f'Material "{value}" not in materials list for model: {matls}')
+
+        # TODO: Allow setting of new materials.
+        # Requires changing a lable property, likely deleting and recreating.
+        if self._material is not None:
+            raise ValueError(
+                'Modifying magnetic material not currently supported.')
+
+        self._material = value
+        self._model._solution_is_dirty = True
+
+    @property
+    def angle(self) -> Q:
+        """
+        Returns magnets magnetization angle (x-axis = 0).
+
+        Returns:
+            Q: Angle of magnitization.
+        """
+
+        return Q(self._angle, 'deg')
+
+    @angle.setter
+    def angle(self, value: Q = None) -> None:
+        """
+        Sets angle of magnitization.
+        NOTE: Currently can only be set on instantiation.
+
+        Args:
+            value (Q): Angle of magnitization (x-axis = 0). Defaults to None.
+
+        Raises:
+            ValueError: If angle already set or not proper units.
+
+        Returns:
+            None
+        """
+
+        if value is None:
+            raise ValueError('No magnetization angle specified.')
+
+        if isinstance(value, Q):
+            value = value.to('deg').magnitude
+
+        if self._angle is not None:
+            raise ValueError(
+                'Modifying magnetic angle not currently supported.')
+
+        self._angle = value
+
+        self._model._solution_is_dirty = True
+
+    def force(self) -> Q:
+        """
+        Returns force vector acting on magnet.
+
+        Raises:
+            RuntimeError: Model analysis must be run before calling.
+
+        Returns:
+            Q: Force vector 
+        """
+
+        if self._model._solution_is_dirty:
+            raise RuntimeError('Model analysis has not been run.')
+
+        # Select the magnet, then calc the force on magnet via stress tensor.
+        femm.mo_groupselectblock(self.group)
+        fx = femm.mo_blockintegral(
+            self._model._block_integral_vars['Force from Stress Tensor - X'])
+        fy = femm.mo_blockintegral(
+            self._model._block_integral_vars['Force from Stress Tensor - Y'])
+
+        return Q([fx, fy], 'N')
 
 # TODO: Handle circuit within the Track
+
+
 class Track(Rect):
     def __init__(self,
                  model: Femm = None,
@@ -434,7 +644,7 @@ class Coil:
             x2 = max([x2, bb[2]])
             y2 = max([y2, bb[3]])
 
-        return [x1, y1, x2, y2]
+        return Q([x1.magnitude, y1.magnitude, x2.magnitude, y2.magnitude], self._model.units)
 
 
 if __name__ == "__main__":
@@ -462,19 +672,25 @@ if __name__ == "__main__":
     # TODO: if all children of the model can have a bbox prop,
     #       then we can create a boundary class that can find the
     #       boundary size automatically.
-    bc_group = model.new_group_id()
     bb = [x.magnitude for x in coil.bbox]
     xc = np.mean([bb[0], bb[2]])
     yc = np.mean([bb[1], bb[3]])
     r = 2*np.linalg.norm([xc - bb[0], yc - bb[1]])
     model.boundary_generate(xc=xc, yc=yc, radius=r)
 
-    # TODO: Add in magnet.
+    # Add in magnet.
+    mag = Magnet(model,
+                 width=Q(6, 'mm'),
+                 height=Q(1, 'mm'))
+    mag.position_ll_set(x=Q(0, 'mm'),
+                        y=Q(0.1, 'mm'))
 
-    femm.mi_saveas('test.FEM')
+    #  Run sim
+    model.analyze()
 
-    # TODO: Run sim
-    # TODO: Gather results
+    # Gather results
+    F = mag.force().to('mN')
+    print(f'Force on magnet: {F:0.2}')
 
     # import time
     # time.sleep(10)
