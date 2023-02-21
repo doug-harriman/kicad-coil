@@ -806,11 +806,11 @@ if __name__ == "__main__":
                  width=Q(6, 'mm'),
                  height=Q(1, 'mm'))
 
-    x_start = coil.lr[0]
-    x_end = coil.ll[0] - mag.width
+    x_start = coil.lr[0] - mag.width / 2
+    x_end = coil.ll[0] - mag.width / 2
 
     # Loop magnet through a set of positions.
-    n_pts = 20
+    n_pts = 20  # Roughly 5 mil spacing
     positions_ll = np.linspace(x_start.magnitude, x_end.magnitude, n_pts)
     forces = Q(np.zeros(len(positions_ll)), 'mN')
     positions_center = Q(np.zeros(len(positions_ll)), 'mm')
@@ -846,6 +846,17 @@ if __name__ == "__main__":
 
     import webbrowser
     webbrowser.open(file_html)
+
+    # Save data
+    import pandas as pd
+    df = pd.DataFrame()
+    df['Position'] = pd.Series(positions_center)
+    df['Force'] = pd.Series(forces)
+    df.to_csv('test.csv')
+
+    if gui:
+        from make_movie import make_movie
+        make_movie('.', 'test.avi')
 
     # Loop.
     # for ...
