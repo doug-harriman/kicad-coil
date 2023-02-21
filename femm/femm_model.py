@@ -4,14 +4,18 @@ import numpy as np
 
 
 class Femm:
-    def __init__(self):
+    def __init__(self, gui: bool = True):
 
         self._circuits = []
         self._next_group_id = 0
 
         # Open Femm and a model file.
-        # femm.openfemm(0)  # 0=Show GUI, 1=Hide GUI
-        femm.openfemm(1)  # 0=Show GUI, 1=Hide GUI
+        self._gui = gui
+        if gui:
+            femm.openfemm(0)  # 0=Show GUI, 1=Hide GUI
+        else:
+            femm.openfemm(1)  # 0=Show GUI, 1=Hide GUI
+
         femm.newdocument(0)  # 0=Magnetics problem
 
         # Default object creation location.
@@ -47,7 +51,12 @@ class Femm:
         # TODO: Make property & handle.
         self._filename_model = 'test.FEM'
 
+        # TODO: Make property & handle
+        self._filename_image = 'test-image'
+        self._image_index = 1
+
         # Model state tracking
+        self._has_been_saved = False    # Has model ever been saved
         self._mesh_is_dirty = True      # Geometry has changed
         self._solution_is_dirty = True  # Need to rerun analysis
 
@@ -140,9 +149,12 @@ class Femm:
             raise RuntimeError(
                 'Model does not have boundary, run boundary_generate')
 
+        if not self._has_been_saved:
+            femm.mi_saveas(self._filename_model)
+            self._has_been_saved = True
+
         self._solution_is_dirty = True
         print('Generating mesh ... ', end="", flush=True)
-        femm.mi_saveas(self._filename_model)
         femm.mi_createmesh()
         print('done', flush=True)
 
@@ -158,6 +170,35 @@ class Femm:
         print('done', flush=True)
 
         self._solution_is_dirty = False
+
+    def save_image(self, b_max_tesla: float = 1) -> None:
+        """
+        Saves B-field image from last analysis default image file name.
+        Files are indexed by analysis count since Femm object creation.
+
+        Returns:
+            None
+        """
+
+        if not self._gui:
+            raise ValueError('Cannot save images if GUI not enabled.')
+
+        if self._solution_is_dirty:
+            raise RuntimeError('Must run analysis before capturing image.')
+
+        filename = f'{self._filename_image}-{self._image_index:04d}.png'
+        print(f'Saving image file: {filename} ... ', end="", flush=True)
+
+        # Capture B-field image
+        femm.mo_zoomnatural()
+        femm.mo_showdensityplot(1,  # Legend. 0=Off, 1=On
+                                0,  # 0=color, 1=grayscale
+                                b_max_tesla,  # Upper disaply limit
+                                0,   # Lower display limit
+                                'bmag')
+        femm.mo_savebitmap(filename)
+        self._image_index += 1
+        print('done', flush=True)
 
     @property
     def boundary_group(self) -> int:
@@ -288,6 +329,50 @@ class Rect:
         return Q([x_c, y_c], self._model.units)
 
     @property
+    def width(self) -> Q:
+        """
+        Returns width (x dimension) of rectangle.
+
+        Returns:
+            Q: Width of rectangle.
+        """
+
+        return Q(self._x2 - self._x1, self._model.units)
+
+    @property
+    def height(self) -> Q:
+        """
+        Returns height (y dimension) of rectangle.
+
+        Returns:
+            Q: Height of rectangle.
+        """
+
+        return Q(self._y2 - self._y1, self._model.units)
+
+    @property
+    def ll(self) -> Q:
+        """
+        Position of lower left corner.
+
+        Returns:
+            Q: X & Y coords of lower left corner of Rect.
+        """
+
+        return Q([self._x1, self._y1], self._model.units)
+
+    @property
+    def lr(self) -> Q:
+        """
+        Position of lower right corner.
+
+        Returns:
+            Q: X & Y coords of lower right corner of Rect.
+        """
+
+        return Q([self._x2, self._y1], self._model.units)
+
+    @property
     def bbox(self) -> tuple:
         """
         Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
@@ -297,6 +382,17 @@ class Rect:
 
         return Q([self._x1, self._y1, self._x2, self._y2], self._model.units)
 
+    @property
+    def position_ll(self) -> np.array:
+        """
+        Returns position of lower left corner.
+
+        Returns:
+            np.array: Lower left corner coordinates.
+        """
+
+        return Q(np.array([self._x1, self._y1]), self._model.units)
+
     def position_ll_set(self, x: Q = None, y: Q = None):
         """
         Sets object lower left corner to specified positions.
@@ -305,13 +401,15 @@ class Rect:
 
         # Unit conversions.
         dx = 0
-        dy = 0
         if x is not None:
-            x = x.to(self._model.units).magnitude
+            if isinstance(x, Q):
+                x = x.to(self._model.units).magnitude
             dx = x - self._x1
 
+        dy = 0
         if y is not None:
-            y = y.to(self._model.units).magnitude
+            if isinstance(y, Q):
+                y = y.to(self._model.units).magnitude
             dy = y - self._y1
 
         dx = Q(dx, self._model.units)
@@ -334,6 +432,7 @@ class Rect:
 
         self.select_by_group()
         femm.mi_movetranslate(dx, dy)
+        femm.mi_clearselected()
 
         # Update internal data
         self._x1 += dx
@@ -495,6 +594,7 @@ class Magnet(Rect):
             raise RuntimeError('Model analysis has not been run.')
 
         # Select the magnet, then calc the force on magnet via stress tensor.
+        femm.mo_clearblock()
         femm.mo_groupselectblock(self.group)
         fx = femm.mo_blockintegral(
             self._model._block_integral_vars['Force from Stress Tensor - X'])
@@ -646,10 +746,33 @@ class Coil:
 
         return Q([x1.magnitude, y1.magnitude, x2.magnitude, y2.magnitude], self._model.units)
 
+    @property
+    def ll(self) -> Q:
+        """
+        Position of lower left corner.
+
+        Returns:
+            Q: X & Y coords of lower left corner of Coil.
+        """
+
+        return self.bbox[[0, 1]]
+
+    @property
+    def lr(self) -> Q:
+        """
+        Position of lower right corner.
+
+        Returns:
+            Q: X & Y coords of lower right corner of Coil.
+        """
+
+        return self.bbox[[2, 1]]
+
 
 if __name__ == "__main__":
 
-    model = Femm()
+    gui = False
+    model = Femm(gui=gui)
 
     # Test Coil
     # PCB design limit info:
@@ -675,22 +798,57 @@ if __name__ == "__main__":
     bb = [x.magnitude for x in coil.bbox]
     xc = np.mean([bb[0], bb[2]])
     yc = np.mean([bb[1], bb[3]])
-    r = 2*np.linalg.norm([xc - bb[0], yc - bb[1]])
+    r = 6*np.linalg.norm([xc - bb[0], yc - bb[1]])
     model.boundary_generate(xc=xc, yc=yc, radius=r)
 
     # Add in magnet.
     mag = Magnet(model,
                  width=Q(6, 'mm'),
                  height=Q(1, 'mm'))
-    mag.position_ll_set(x=Q(0, 'mm'),
-                        y=Q(0.1, 'mm'))
 
-    #  Run sim
-    model.analyze()
+    x_start = coil.lr[0]
+    x_end = coil.ll[0] - mag.width
 
-    # Gather results
-    F = mag.force().to('mN')
-    print(f'Force on magnet: {F:0.2}')
+    # Loop magnet through a set of positions.
+    n_pts = 20
+    positions_ll = np.linspace(x_start.magnitude, x_end.magnitude, n_pts)
+    forces = Q(np.zeros(len(positions_ll)), 'mN')
+    positions_center = Q(np.zeros(len(positions_ll)), 'mm')
 
-    # import time
-    # time.sleep(10)
+    for i, x in enumerate(positions_ll):
+        print(f'\nSim {i+1:02d}/{n_pts:02d}', flush=True)
+
+        # Update magnet position
+        mag.position_ll_set(x=x, y=0.2)
+
+        #  Run sim (mesh happens automatically if something moves.)
+        model.analyze()
+
+        if gui:
+            model.save_image(b_max_tesla=0.6)
+
+        # Gather results
+        forces[i] = mag.force()[0]  # X-component
+        positions_center[i] = mag.center[0]
+
+        print(f'Pos={positions_center[i]:0.3}, Force={forces[i]:0.2}',
+              flush=True)
+
+    import plotly.graph_objects as go
+    fig = go.Figure()
+    trc = go.Scatter(x=positions_center, y=forces)
+    fig.add_trace(trc)
+    fig.update_xaxes(title_text=f'Position [{positions_center.units}]')
+    fig.update_yaxes(
+        title_text=f'X-Direction Force on Magnet [{forces.units}]')
+    file_html = 'test-plot.html'
+    fig.write_html(file_html)
+
+    import webbrowser
+    webbrowser.open(file_html)
+
+    # Loop.
+    # for ...
+    # set mag position
+    # analyze
+    # read force vector
