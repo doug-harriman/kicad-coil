@@ -67,7 +67,13 @@ FR4 thermal properties
 
 ## Design Questions
 
-- [ ] FEMM model prediction for force for unit depth rectangular circuit.
+- [x] FEMM model prediction for force for unit depth rectangular circuit.
+- [x] Compare force curves for individual tracks vs. distributed coil ciruit.  Is the detail worth it?
+    - High res coil (one FEMM square per trace) is extremely noisy.
+    - Both high res and distributed are noisy due to low field strength from coil.  
+    - Tightening the solver tolerance helped, as did increasing analysis current.
+    - With both of those, high res didn't offer much benefit, so running with the simpler, distributed coil model.
+- [ ] Break down design factors to investigate into a single list, and organize.  Answer simple questions first to build proxy models for more detailed design space search.
 - [ ] Trade curves for different PCB geometry (id, od, trace width/spacing) based on available magnet sizes.
 - [ ] Impact of Iron on top of magnets.  Trade of magnet/iron thickness ratio vs. overall thickness.
 - [ ] Km vs. trace width/spacing and vs. PCB layer count for a given ID/OD, and for viable OD's based on available magnets.
@@ -79,4 +85,6 @@ FR4 thermal properties
     - Future: ELMER for true geometric impact assessment.
 - [ ] Hall measured field for magnets, estimate magnet type based on field & distance.
 - [ ] Optimal magnet spacing (tangentially) for rotor to inform next design.
-- [ ] What are limits on copper thickness vs. PCB thickness vs. trace width.
+- [x] What are limits on copper thickness vs. PCB thickness vs. trace width.
+    - Captured info above relating Cu thickness and traces width/spacing.
+
