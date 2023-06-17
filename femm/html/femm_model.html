@@ -1,0 +1,3758 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>femm_model API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>femm_model</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import femm
+from pint import Quantity as Q
+import numpy as np
+
+
+class Femm:
+    def __init__(self, gui: bool = True):
+
+        self._circuits = []
+        self._next_group_id = 0
+
+        # Open Femm and a model file.
+        self._gui = gui
+        if gui:
+            femm.openfemm(0)  # 0=Show GUI, 1=Hide GUI
+        else:
+            femm.openfemm(1)  # 0=Show GUI, 1=Hide GUI
+
+        femm.newdocument(0)  # 0=Magnetics problem
+
+        # Default object creation location.
+        # Because FEMM requires selection of objects by position, you want to
+        # create things in a position away from where you&#39;ll be working.
+        self._default_create_x = -100
+        self._default_create_y = -100
+
+        # Problem definition
+        frequency = 0  # static
+        self._units = &#39;millimeters&#39;
+        prob_type = &#39;planar&#39;
+        precision = 1e-8  # standard value
+        precision = 1e-9  # Stabilized better with PCB coil.
+
+        self._precision = precision
+
+        depth = 1  # in &#34;units&#34;.  Using unit value lets us easily scale later.
+        femm.mi_probdef(frequency, self._units,
+                        prob_type, self._precision, depth)
+
+        femm.main_resize(500, 1000)  # Set FEMM window size in screen pixels
+
+        # Define materials in use in the problem.
+        matl_mag = &#34;N52&#34;
+        # Solid copper, must define individual trace wires.
+        matl_coil = &#34;Copper&#34;
+        matl_air = &#34;Air&#34;
+        matl_list = [matl_mag, matl_coil, matl_air]
+        for matl in matl_list:
+            femm.mi_getmaterial(matl)
+        self._materials = matl_list
+
+        # Boundary
+        self._boundary_group = None
+
+        # Model file name
+        # TODO: Make property &amp; handle.
+        self._filename_model = &#39;test.FEM&#39;
+
+        # TODO: Make property &amp; handle
+        self._filename_image = &#39;test-image&#39;
+        self._image_index = 1
+
+        # Model state tracking
+        self._has_been_saved = False    # Has model ever been saved
+        self._mesh_is_dirty = True      # Geometry has changed
+        self._solution_is_dirty = True  # Need to rerun analysis
+
+        # FEMM variable ID dictionairies.
+        self._block_integral_vars = {&#39;Force from Stress Tensor - X&#39;: 18,
+                                     &#39;Force from Stress Tensor - Y&#39;: 19}
+
+    @property
+    def units(self) -&gt; str:
+
+        return self._units
+
+    @property
+    def materials(self) -&gt; list:
+        &#34;&#34;&#34;
+        List of materials defined for use in model.
+
+        Returns:
+            list: List of materials defined in model.
+        &#34;&#34;&#34;
+
+        return self._materials
+
+    def new_group_id(self) -&gt; int:
+        &#34;&#34;&#34;
+        Returns next available group ID.
+        &#34;&#34;&#34;
+
+        self._next_group_id += 1
+        return self._next_group_id
+
+    def boundary_generate(self,
+                          xc: Q = Q(0, &#39;mm&#39;),
+                          yc: Q = Q(0, &#39;mm&#39;),
+                          radius: Q = Q(50, &#39;mm&#39;)) -&gt; None:
+        &#34;&#34;&#34;
+        Generates boundary conditions.
+        NOTE: Can only be run once per model.
+
+        Args:
+            xc (Q, optional): X coord of center of circular boundary. Defaults to Q(0,&#39;mm&#39;).
+            yc (Q, optional): Y coord of center of circular boundary. Defaults to Q(0,&#39;mm&#39;).
+            radius (Q, optional): Radius of circular boundary. Defaults to Q(50,&#39;mm&#39;).
+
+        Raises:
+            ValueError: Boundary condition already exists.
+        &#34;&#34;&#34;
+
+        # TODO: Support deletion and re-creation of boundary group.
+        if self._boundary_group is not None:
+            raise ValueError(&#34;Boundary condition specification exists.&#34;)
+
+        # Handle units if provided
+        if isinstance(xc, Q):
+            xc = xc.to(self._units).magnitude
+        if isinstance(yc, Q):
+            yc = yc.to(self._units).magnitude
+        if isinstance(radius, Q):
+            radius = radius.to(self._units)
+
+        self._boundary_group = model.new_group_id()
+
+        femm.mi_makeABC(7,       # Number of shells for boundary.  7 is standard.
+                        radius,  # Radius of boundary shell circle
+                        xc,      # Center of boundary shell circle
+                        yc,
+                        0)       # Boundary condition: 0=Dirichlet, 1=Neumann
+
+        # Fill in boundary zone with Air
+        y_l = yc+radius*0.95     # Place label just inside boundary.
+        femm.mi_addblocklabel(xc, y_l)
+        femm.mi_selectlabel(xc, y_l)
+        femm.mi_setblockprop(&#34;Air&#34;,
+                             1,     # Auto mesh
+                             0.01,  # Mesh size, not used.
+                             &#34;&#34;,    # Circuit name.  &#34;&#34; =&gt; No circuit
+                             0,     # Magnetization dir, ignored.
+                             self._boundary_group)
+
+    def mesh_generate(self) -&gt; None:
+        &#34;&#34;&#34;
+        Generates mesh for model.
+        NOTE: model must be saved first.
+
+        Returns:
+            None.
+        &#34;&#34;&#34;
+
+        if self._boundary_group is None:
+            raise RuntimeError(
+                &#39;Model does not have boundary, run boundary_generate&#39;)
+
+        if not self._has_been_saved:
+            femm.mi_saveas(self._filename_model)
+            self._has_been_saved = True
+
+        self._solution_is_dirty = True
+        print(&#39;Generating mesh ... &#39;, end=&#34;&#34;, flush=True)
+        femm.mi_createmesh()
+        print(&#39;done&#39;, flush=True)
+
+    def analyze(self):
+
+        # Remesh if needed
+        if self._mesh_is_dirty:
+            self.mesh_generate()
+
+        print(&#39;Running FEMM analysis ... &#39;, end=&#34;&#34;, flush=True)
+        femm.mi_analyze()
+        femm.mi_loadsolution()
+        print(&#39;done&#39;, flush=True)
+
+        self._solution_is_dirty = False
+
+    def save_image(self, b_max_tesla: float = 1) -&gt; None:
+        &#34;&#34;&#34;
+        Saves B-field image from last analysis default image file name.
+        Files are indexed by analysis count since Femm object creation.
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+
+        if not self._gui:
+            raise ValueError(&#39;Cannot save images if GUI not enabled.&#39;)
+
+        if self._solution_is_dirty:
+            raise RuntimeError(&#39;Must run analysis before capturing image.&#39;)
+
+        filename = f&#39;{self._filename_image}-{self._image_index:04d}.png&#39;
+        print(f&#39;Saving image file: {filename} ... &#39;, end=&#34;&#34;, flush=True)
+
+        # Capture B-field image
+        femm.mo_zoomnatural()
+        femm.mo_showdensityplot(1,  # Legend. 0=Off, 1=On
+                                0,  # 0=color, 1=grayscale
+                                b_max_tesla,  # Upper disaply limit
+                                0,   # Lower display limit
+                                &#39;bmag&#39;)
+        femm.mo_savebitmap(filename)
+        self._image_index += 1
+        print(&#39;done&#39;, flush=True)
+
+    @property
+    def boundary_group(self) -&gt; int:
+        &#34;&#34;&#34;
+        Boundary group ID.
+
+        Returns:
+            int: Group ID of boundary conditions.
+        &#34;&#34;&#34;
+
+        return self._boundary_group
+
+    def _circuit_add(self, circuit=None):
+        &#34;&#34;&#34;Adds name of circuit to list for tracking.
+            Should not be called directly.&#34;&#34;&#34;
+
+        self._circuits.append(circuit.name)
+
+        # Register with femm
+        femm.mi_addcircprop(circuit.name,
+                            circuit.current.to(&#39;A&#39;).magnitude,
+                            1)  # series -&gt; same currents for all elements.
+
+
+class Circuit:
+
+    def __init__(self,
+                 model: Femm = None,
+                 name: str = &#39;circuit1&#39;,
+                 current: Q = Q(1, &#39;A&#39;)):
+
+        if model is None:
+            raise ValueError(&#34;Model not specified.&#34;)
+
+        self._name = name
+        self._current = current
+
+        # Register with the model
+        model._circuit_add(self)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def current(self):
+        return self._current
+
+
+class Rect:
+    &#34;&#34;&#34;
+    Base class for geometric manipulation.
+    &#34;&#34;&#34;
+
+    def __init__(self,
+                 model: Femm = None,
+                 width: Q = Q(1, &#39;mm&#39;),
+                 height: Q = Q(1, &#39;mm&#39;),
+                 x: Q = None,
+                 y: Q = None):
+
+        if model is None:
+            raise ValueError(&#34;Model not specified.&#34;)
+
+        if x is None:
+            x = Q(model._default_create_x, model.units)
+        if y is None:
+            y = Q(model._default_create_y, model.units)
+
+        self._x1 = x.to(model.units).magnitude
+        self._x2 = self._x1 + width.to(model.units).magnitude
+        self._y1 = y.to(model.units).magnitude
+        self._y2 = self._y1 + height.to(model.units).magnitude
+
+        femm.mi_clearselected()
+        femm.mi_drawrectangle(self._x1, self._y1, self._x2, self._y2)
+
+        self._group = None
+        self.group = model.new_group_id()  # Use the method to take care of the details
+
+        self._model = model
+        self._model._mesh_is_dirty = True
+
+    def select_by_rect(self):
+        &#34;&#34;&#34;
+        Selects object by its defining rectangle so that it is active for operations.
+        &#34;&#34;&#34;
+        mode = 4  # All entity types selected
+        femm.mi_selectrectangle(
+            self._x1, self._y1, self._x2, self._y2, mode)
+
+    def select_by_group(self):
+        &#34;&#34;&#34;
+        Selects object by its group ID.
+        Object is given an ID upon creation for selection.
+        If group ID is changed, this method will select everything in the group.
+        &#34;&#34;&#34;
+        femm.mi_selectgroup(self._group)
+
+    @property
+    def group(self):
+        &#34;&#34;&#34;
+        Group number associated with object.
+        &#34;&#34;&#34;
+        return self._group
+
+    @group.setter
+    def group(self, value: int = None):
+        &#34;&#34;&#34;
+        Set group number associated with object
+        &#34;&#34;&#34;
+        if value is None:
+            raise ValueError(&#34;No group number provided&#34;)
+
+        self.select_by_rect()
+        femm.mi_setgroup(value)
+        self._group = value
+
+    @property
+    def center(self) -&gt; tuple:
+        &#34;&#34;&#34;
+        Tuple of center coordinates.
+        &#34;&#34;&#34;
+
+        x_c = np.mean([self._x1, self._x2])
+        y_c = np.mean([self._y1, self._y2])
+
+        return Q(np.array([x_c, y_c]), self._model.units)
+
+    @property
+    def width(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Returns width (x dimension) of rectangle.
+
+        Returns:
+            Q: Width of rectangle.
+        &#34;&#34;&#34;
+
+        return Q(self._x2 - self._x1, self._model.units)
+
+    @property
+    def height(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Returns height (y dimension) of rectangle.
+
+        Returns:
+            Q: Height of rectangle.
+        &#34;&#34;&#34;
+
+        return Q(self._y2 - self._y1, self._model.units)
+
+    @property
+    def ll(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower left corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower left corner of Rect.
+        &#34;&#34;&#34;
+
+        return Q(np.array([self._x1, self._y1]), self._model.units)
+
+    @property
+    def lr(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower right corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower right corner of Rect.
+        &#34;&#34;&#34;
+
+        return Q(np.array([self._x2, self._y1]), self._model.units)
+
+    @property
+    def ul(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of upper left corner.
+
+        Returns:
+            Q: X &amp; Y coords of upper left corner of Rect.
+        &#34;&#34;&#34;
+
+        return Q(np.array([self._x1, self._y2]), self._model.units)
+
+    @property
+    def ur(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of upper right corner.
+
+        Returns:
+            Q: X &amp; Y coords of upper right corner of Rect.
+        &#34;&#34;&#34;
+
+        return Q(np.array([self._x2, self._y2]), self._model.units)
+
+    @property
+    def bbox(self) -&gt; tuple:
+        &#34;&#34;&#34;
+        Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
+        bounding box lower left corner and x2,y2 represents the 
+        bounding box upper right corner.
+        &#34;&#34;&#34;
+
+        return Q([self._x1, self._y1, self._x2, self._y2], self._model.units)
+
+    def ll_set(self, x: Q = None, y: Q = None):
+        &#34;&#34;&#34;
+        Sets object lower left corner to specified positions.
+        If x or y position is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        # Unit conversions.
+        dx = 0
+        if x is not None:
+            if isinstance(x, Q):
+                x = x.to(self._model.units).magnitude
+            dx = x - self._x1
+
+        dy = 0
+        if y is not None:
+            if isinstance(y, Q):
+                y = y.to(self._model.units).magnitude
+            dy = y - self._y1
+
+        dx = Q(dx, self._model.units)
+        dy = Q(dy, self._model.units)
+
+        self.translate(dx, dy)
+
+    def ul_set(self, x: Q = None, y: Q = None):
+        &#34;&#34;&#34;
+        Sets object upper left corner to specified positions.
+        If x or y position is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        # Unit conversions.
+        dx = 0
+        if x is not None:
+            if isinstance(x, Q):
+                x = x.to(self._model.units).magnitude
+            dx = x - self._x1
+
+        dy = 0
+        if y is not None:
+            if isinstance(y, Q):
+                y = y.to(self._model.units).magnitude
+            dy = y - self._y2
+
+        dx = Q(dx, self._model.units)
+        dy = Q(dy, self._model.units)
+
+        self.translate(dx, dy)
+
+    def center_set(self, x: Q = None, y: Q = None):
+        &#34;&#34;&#34;
+        Sets object center to specified positions.
+        If x or y position is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        c = self.center.magnitude
+
+        # Unit conversions.
+        dx = 0
+        if x is not None:
+            if isinstance(x, Q):
+                x = x.to(self._model.units).magnitude
+            dx = x - c[0]
+
+        dy = 0
+        if y is not None:
+            if isinstance(y, Q):
+                y = y.to(self._model.units).magnitude
+            dy = y - c[1]
+
+        self.translate(dx, dy)
+
+    def translate(self, dx: Q = Q(0, &#39;mm&#39;), dy: Q = Q(0, &#39;mm&#39;)):
+        &#34;&#34;&#34;
+        Translates object specified distances in X &amp; Y.
+        If dx or dy is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        if isinstance(dx, Q):
+            dx = dx.to(self._model.units).magnitude
+        if isinstance(dy, Q):
+            dy = dy.to(self._model.units).magnitude
+
+        self.select_by_group()
+        femm.mi_movetranslate(dx, dy)
+        femm.mi_clearselected()
+
+        # Update internal data
+        self._x1 += dx
+        self._x2 += dx
+        self._y1 += dy
+        self._y2 += dy
+
+        self._model._mesh_is_dirty = True
+
+
+class Magnet(Rect):
+    &#34;&#34;&#34;
+    FEMM model Magnet object.
+    &#34;&#34;&#34;
+
+    def __init__(self,
+                 model: Femm = None,
+                 width: Q = Q(1, &#39;mm&#39;),
+                 height: Q = Q(1, &#39;mm&#39;),
+                 x: Q = None,
+                 y: Q = None,
+                 material: str = &#34;N52&#34;,
+                 angle: Q = Q(90, &#39;deg&#39;)):
+        &#34;&#34;&#34;
+        Magnet constructor.
+
+        NOTE: Recommend that x &amp; y params are left at default.
+              Place the magnet after creation.
+
+        Args:
+            model (Femm): FEMM model to which magnet belongs.
+            width (Q, optional): Width of magnet. Defaults to Q(1, &#39;mm&#39;).
+            height (Q, optional): Height of magnet. Defaults to Q(1, &#39;mm&#39;).
+            x (Q, optional): X coord of create position. Defaults to None.
+            y (Q, optional): Y coord of create positoin. Defaults to None.
+            material (str, optional): Magnetic material. Defaults to &#34;N52&#34;.
+            angle (Q, optional): Magnitization direction. Defaults to Q(90, &#39;deg&#39;).
+        &#34;&#34;&#34;
+
+        # Init Rect
+        super().__init__(model, width, height, x, y)
+
+        # Magnet stuff
+        self._material = None
+        self.material = material
+
+        # Magnitization direction
+        self._angle = None
+        self.angle = angle
+
+        # Magnet material label
+        (x, y) = [n.magnitude for n in self.center]
+        femm.mi_addblocklabel(x, y)
+        femm.mi_selectlabel(x, y)
+        femm.mi_setblockprop(self.material,
+                             1,     # Auto mesh
+                             0.01,  # Mesh size, not used.
+                             &#34;&#34;,    # Circuit name.  &#34;&#34; =&gt; No circuit
+                             # Magnetization dir.
+                             self.angle.to(&#39;deg&#39;).magnitude,
+                             self.group)
+
+    @property
+    def material(self) -&gt; str:
+        &#34;&#34;&#34;
+        Magnet material.
+
+        Returns:
+            str: Magnet material.
+        &#34;&#34;&#34;
+
+        return self._material
+
+    @material.setter
+    def material(self, value: str = None) -&gt; None:
+        &#34;&#34;&#34;
+        Sets magnetic material.
+
+        Args:
+            value (str): Material property name per FEMM.
+
+        Raises:
+            ValueError: No material specified.
+
+        Returns:
+            None.
+        &#34;&#34;&#34;
+
+        if value is None:
+            raise ValueError(&#39;No magenet material specified.&#39;)
+
+        matls = self._model.materials
+        if value not in matls:
+            raise ValueError(
+                f&#39;Material &#34;{value}&#34; not in materials list for model: {matls}&#39;)
+
+        # TODO: Allow setting of new materials.
+        # Requires changing a lable property, likely deleting and recreating.
+        if self._material is not None:
+            raise ValueError(
+                &#39;Modifying magnetic material not currently supported.&#39;)
+
+        self._material = value
+        self._model._solution_is_dirty = True
+
+    @property
+    def angle(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Returns magnets magnetization angle (x-axis = 0).
+
+        Returns:
+            Q: Angle of magnitization.
+        &#34;&#34;&#34;
+
+        return Q(self._angle, &#39;deg&#39;)
+
+    @angle.setter
+    def angle(self, value: Q = None) -&gt; None:
+        &#34;&#34;&#34;
+        Sets angle of magnitization.
+        NOTE: Currently can only be set on instantiation.
+
+        Args:
+            value (Q): Angle of magnitization (x-axis = 0). Defaults to None.
+
+        Raises:
+            ValueError: If angle already set or not proper units.
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+
+        if value is None:
+            raise ValueError(&#39;No magnetization angle specified.&#39;)
+
+        if isinstance(value, Q):
+            value = value.to(&#39;deg&#39;).magnitude
+
+        if self._angle is not None:
+            raise ValueError(
+                &#39;Modifying magnetic angle not currently supported.&#39;)
+
+        self._angle = value
+
+        self._model._solution_is_dirty = True
+
+    def force(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Returns force vector acting on magnet.
+
+        Raises:
+            RuntimeError: Model analysis must be run before calling.
+
+        Returns:
+            Q: Force vector 
+        &#34;&#34;&#34;
+
+        if self._model._solution_is_dirty:
+            raise RuntimeError(&#39;Model analysis has not been run.&#39;)
+
+        # Select the magnet, then calc the force on magnet via stress tensor.
+        femm.mo_clearblock()
+        femm.mo_groupselectblock(self.group)
+        fx = femm.mo_blockintegral(
+            self._model._block_integral_vars[&#39;Force from Stress Tensor - X&#39;])
+        fy = femm.mo_blockintegral(
+            self._model._block_integral_vars[&#39;Force from Stress Tensor - Y&#39;])
+
+        return Q([fx, fy], &#39;N&#39;)
+
+# TODO: Handle circuit within the Track
+
+
+class Track(Rect):
+    def __init__(self,
+                 model: Femm = None,
+                 circuit: Circuit = None,
+                 width: Q = Q(1, &#39;mm&#39;),
+                 height: Q = Q(1, &#39;mm&#39;),
+                 x: Q = None,
+                 y: Q = None):
+
+        # Init the Rect
+        super().__init__(model, width, height, x, y)
+
+
+class CoilConductorsDistributed:
+    &#34;&#34;&#34;
+    Models a flat PCB coil as a distributed winding (standard FEMM technique).
+    &#34;&#34;&#34;
+
+    def __init__(self,
+                 model: Femm = None,
+                 track_width: Q = Q(1, &#39;mm&#39;),
+                 track_spacing: Q = Q(1, &#39;mm&#39;),
+                 track_thickness: Q = Q(1, &#39;mm&#39;),
+                 dia_inside: Q = Q(1, &#39;mm&#39;),
+                 x_center: Q = Q(0, &#39;mm&#39;),
+                 y_center: Q = Q(0, &#39;mm&#39;),
+                 turns: int = 3,
+                 current: Q = Q(1, &#39;A&#39;)):
+
+        if model is None:
+            raise ValueError(&#34;Model not specified.&#34;)
+        self._model = model
+
+        # TODO: Make a real property
+        self._turns = turns
+        self._current = current
+
+        self._group = model.new_group_id()
+        print(f&#39;Coil ID: {self._group}&#39;)
+
+        # Name the coil, but it&#39;s not user settable for now.
+        self._name = f&#39;Coil_{self._group}&#39;
+
+        # Create a circuit for the coil.
+        # TODO: How to deal with next coil, with opposite current.
+        self._circuit = Circuit(model=model,
+                                name=f&#39;Circuit_{self._name}&#39;,
+                                current=np.abs(current))
+
+        # Create an array of tracks.
+        self._conductors = []
+
+        # Create and position track.
+        coil_side_width = track_width*turns + track_spacing*(turns-1)
+
+        # ---------------------------
+        # Left side
+        # ---------------------------
+
+        # Created at default position, well outside where we want it
+        # to avoid issues selecting geometry by position.
+        track = Track(model=model,
+                      width=coil_side_width,
+                      height=track_thickness)
+        track.ll_set(
+            x=-(coil_side_width+dia_inside/2), y=track_thickness/2)
+        track.group = self._group
+        self._conductors.append(track)
+
+        # Create FEMM label to mark material, circuit &amp; turn count.
+        (xc, yc) = track.center
+        xc = xc.magnitude
+        yc = yc.magnitude
+        femm.mi_addblocklabel(xc, yc)
+        femm.mi_selectlabel(xc, yc)
+        femm.mi_setblockprop(&#34;Copper&#34;,  # Material to use.  Solid copper for a single trace.
+                             1,         # Auto mesh size
+                             .01,       # Mesh size.  Ignored for auto.
+                             self._circuit.name,
+                             0,
+                             self._group,  # Belongs to coil group.
+                             np.sign(current)*turns)        # Number of turns
+
+        # ---------------------------
+        # Right side
+        # ---------------------------
+
+        # Create and position track.
+        track = Track(model=model,
+                      width=coil_side_width,
+                      height=track_thickness)
+        track.ll_set(x=dia_inside/2, y=track_thickness/2)
+        track.group = self._group
+        self._conductors.append(track)
+
+        # Create FEMM label to mark material, circuit &amp; turn count.
+        (xc, yc) = track.center
+        xc = xc.magnitude
+        yc = yc.magnitude
+        femm.mi_addblocklabel(xc, yc)
+        femm.mi_selectlabel(xc, yc)
+        femm.mi_setblockprop(&#34;Copper&#34;,  # Material to use.  Solid copper for a single trace.
+                             1,         # Auto mesh size
+                             .01,       # Mesh size.  Ignored for auto.
+                             self._circuit.name,
+                             0,
+                             self._group,  # Belongs to coil group.
+                             -np.sign(current)*turns)       # Number of turns, opposite direction
+
+    @property
+    def group(self) -&gt; int:
+        &#34;&#34;&#34;
+        Coil group ID.
+        &#34;&#34;&#34;
+
+        return self._group
+
+    def select_by_group(self):
+        &#34;&#34;&#34;
+        Selects object by its group ID.
+        Object is given an ID upon creation for selection.
+        If group ID is changed, this method will select everything in the group.
+        &#34;&#34;&#34;
+        femm.mi_selectgroup(self._group)
+
+    @property
+    def name(self) -&gt; str:
+        &#34;&#34;&#34;
+        Coil name (read only)
+        &#34;&#34;&#34;
+        return self._name
+
+    @property
+    def bbox(self) -&gt; tuple:
+        &#34;&#34;&#34;
+        Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
+        bounding box lower left corner and x2,y2 represents the 
+        bounding box upper right corner.
+        &#34;&#34;&#34;
+
+        x1 = Q(np.Inf, self._model.units)
+        y1 = Q(np.Inf, self._model.units)
+        x2 = -x1
+        y2 = -y1
+        for track in self._conductors:
+            bb = track.bbox
+            x1 = min([x1, bb[0]])
+            y1 = min([y1, bb[1]])
+            x2 = max([x2, bb[2]])
+            y2 = max([y2, bb[3]])
+
+        return Q([x1.magnitude, y1.magnitude, x2.magnitude, y2.magnitude], self._model.units)
+
+    @property
+    def ll(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower left corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower left corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[0, 1]]
+
+    @property
+    def lr(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower right corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower right corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[2, 1]]
+
+    @property
+    def ul(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of upper left corner.
+
+        Returns:
+            Q: X &amp; Y coords of upper left corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[0, 3]]
+
+    @property
+    def ur(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of upper right corner.
+
+        Returns:
+            Q: X &amp; Y coords of upper right corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[2, 3]]
+
+    def ll_set(self, x: Q = None, y: Q = None):
+        &#34;&#34;&#34;
+        Sets object lower left corner to specified positions.
+        If x or y position is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        ll = self.ll
+
+        # Unit conversions.
+        dx = 0
+        if x is not None:
+            if isinstance(x, Q):
+                x = x.to(self._model.units).magnitude
+            dx = x - ll[0]
+
+        dy = 0
+        if y is not None:
+            if isinstance(y, Q):
+                y = y.to(self._model.units).magnitude
+            dy = y - ll[1]
+
+        dx = Q(dx, self._model.units)
+        dy = Q(dy, self._model.units)
+
+        self.translate(dx, dy)
+
+    def ul_set(self, x: Q = None, y: Q = None):
+        &#34;&#34;&#34;
+        Sets object upper left corner to specified positions.
+        If x or y position is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        ul = self.ul
+
+        # Unit conversions.
+        dx = 0
+        if x is not None:
+            if isinstance(x, Q):
+                x = x.to(self._model.units).magnitude
+            dx = x - ul[0]
+
+        dy = 0
+        if y is not None:
+            if isinstance(y, Q):
+                y = y.to(self._model.units).magnitude
+            dy = y - ul[1]
+
+        dx = Q(dx, self._model.units)
+        dy = Q(dy, self._model.units)
+
+        self.translate(dx, dy)
+
+    def translate(self, dx: Q = Q(0, &#39;mm&#39;), dy: Q = Q(0, &#39;mm&#39;)):
+        &#34;&#34;&#34;
+        Translates object specified distances in X &amp; Y.
+        If dx or dy is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        if isinstance(dx, Q):
+            dx = dx.to(self._model.units).magnitude
+        if isinstance(dy, Q):
+            dy = dy.to(self._model.units).magnitude
+
+        self.select_by_group()
+        femm.mi_movetranslate(dx, dy)
+        femm.mi_clearselected()
+
+        # Update internal data
+        self._x1 += dx
+        self._x2 += dx
+        self._y1 += dy
+        self._y2 += dy
+
+        self._model._mesh_is_dirty = True
+
+
+class CoilConductorsIndividual:
+    &#34;&#34;&#34;
+    Models a flat PCB coil as a individual winding entities (two Rects per turn).
+    &#34;&#34;&#34;
+
+    def __init__(self,
+                 model: Femm = None,
+                 track_width: Q = Q(1, &#39;mm&#39;),
+                 track_spacing: Q = Q(1, &#39;mm&#39;),
+                 track_thickness: Q = Q(1, &#39;mm&#39;),
+                 dia_inside: Q = Q(1, &#39;mm&#39;),
+                 x_center: Q = Q(0, &#39;mm&#39;),
+                 y_center: Q = Q(0, &#39;mm&#39;),
+                 turns: int = 3,
+                 current: Q = Q(1, &#39;A&#39;)):
+
+        if model is None:
+            raise ValueError(&#34;Model not specified.&#34;)
+        self._model = model
+
+        self._group = model.new_group_id()
+        print(f&#39;Coil ID: {self._group}&#39;)
+
+        # Name the coil, but it&#39;s not user settable for now.
+        self._name = f&#39;Coil_{self._group}&#39;
+
+        # Create a circuit for the coil.
+        # TODO: How to deal with next coil, with opposite current.
+        self._circuit = Circuit(model=model,
+                                name=f&#39;Circuit_{self._name}&#39;,
+                                current=current)
+
+        # Create an array of tracks.
+        self._conductors = []
+
+        # Left side, from inside out.
+        offset = x_center - track_width - dia_inside/2
+        for i in np.arange(0, turns):
+            # Create and position track.
+            # Created at default position, well outside where we want it
+            # to avoid issues selecting geometry by position.
+            track = Track(model=model,
+                          width=track_width,
+                          height=track_thickness)
+            track.ll_set(x=offset, y=track_thickness/2)
+            # TODO: Put track into the coil&#39;s group.
+
+            # Create FEMM label to mark material, circuit &amp; turn count.
+            (xc, yc) = track.center
+            xc = xc.magnitude
+            yc = yc.magnitude
+            femm.mi_addblocklabel(xc, yc)
+            femm.mi_selectlabel(xc, yc)
+            femm.mi_setblockprop(&#34;Copper&#34;,  # Material to use.  Solid copper for a single trace.
+                                 1,         # Auto mesh size
+                                 .01,       # Mesh size.  Ignored for auto.
+                                 # Magnetization direction, ignored.
+                                 self._circuit.name,
+                                 0,
+                                 self._group,  # Belongs to coil group.
+                                 1)          # Number of turns
+
+            # Bookkeeping
+            offset -= (track_width + track_spacing)
+            self._conductors.append(track)
+
+        # Right side, from inside out
+        offset = x_center + dia_inside/2
+        for i in np.arange(0, turns):
+            # Create and position track.
+            track = Track(model=model,
+                          width=track_width,
+                          height=track_thickness)
+            track.ll_set(x=offset, y=track_thickness/2)
+
+            # Create FEMM label to mark material, circuit &amp; turn count.
+            (xc, yc) = track.center
+            xc = xc.magnitude
+            yc = yc.magnitude
+            femm.mi_addblocklabel(xc, yc)
+            femm.mi_selectlabel(xc, yc)
+            femm.mi_setblockprop(&#34;Copper&#34;,  # Material to use.  Solid copper for a single trace.
+                                 1,         # Auto mesh size
+                                 .01,       # Mesh size.  Ignored for auto.
+                                 # Magnetization direction, ignored.
+                                 self._circuit.name,
+                                 0,
+                                 self._group,  # Belongs to coil group.
+                                 -1)          # Number of turns, opposite direction
+
+            # Bookkeeping
+            offset += track_width + track_spacing
+            self._conductors.append(track)
+
+    @property
+    def group(self) -&gt; int:
+        &#34;&#34;&#34;
+        Coil group ID.
+        &#34;&#34;&#34;
+
+        return self._group
+
+    @property
+    def name(self) -&gt; str:
+        &#34;&#34;&#34;
+        Coil name (read only)
+        &#34;&#34;&#34;
+        return self._name
+
+    @property
+    def bbox(self) -&gt; tuple:
+        &#34;&#34;&#34;
+        Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
+        bounding box lower left corner and x2,y2 represents the 
+        bounding box upper right corner.
+        &#34;&#34;&#34;
+
+        x1 = Q(np.Inf, self._model.units)
+        y1 = Q(np.Inf, self._model.units)
+        x2 = -x1
+        y2 = -y1
+        for track in self._conductors:
+            bb = track.bbox
+            x1 = min([x1, bb[0]])
+            y1 = min([y1, bb[1]])
+            x2 = max([x2, bb[2]])
+            y2 = max([y2, bb[3]])
+
+        return Q([x1.magnitude, y1.magnitude, x2.magnitude, y2.magnitude], self._model.units)
+
+    @property
+    def ll(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower left corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower left corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[0, 1]]
+
+    @property
+    def lr(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower right corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower right corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[2, 1]]
+
+
+if __name__ == &#34;__main__&#34;:
+
+    # Basic analysis config
+    gui = True
+    gui = False
+    n_pts = 20
+
+    analysis_current = Q(20, &#39;A&#39;)
+
+    # Test Coil
+    # PCB design limit info:
+    # https://github.com/doug-harriman/kicad-coil/blob/main/design-info.md
+    track_thickness = Q(34.8, &#39;um&#39;)
+    track_spacing = Q(6, &#39;milliinch&#39;)
+    track_width = track_spacing
+    dia_inside = Q(1.6, &#39;mm&#39;)  # Measured from KiCAD PCB
+    turns = 12
+
+    # Create Model
+    model = Femm(gui=gui)
+    # Top layer
+    coil_l1 = CoilConductorsDistributed(model=model,
+                                        turns=turns,
+                                        track_thickness=track_thickness,
+                                        track_width=track_width,
+                                        track_spacing=track_spacing,
+                                        dia_inside=dia_inside,
+                                        current=analysis_current)
+    # Bottom layer
+    # TODO: Need to be able to easily position coil
+    # coil_l2 = CoilConductorsDistributed(model=model,
+    #                                     turns=turns,
+    #                                     track_thickness=track_thickness,
+    #                                     track_width=track_width,
+    #                                     track_spacing=track_spacing,
+    #                                     dia_inside=dia_inside,
+    #                                     current=analysis_current)
+
+    # -----------------------------------------------------------------
+    # Generate the boundary conditions.
+    # -----------------------------------------------------------------
+    # TODO: if all children of the model can have a bbox prop,
+    #       then we can create a boundary class that can find the
+    #       boundary size automatically.
+    bb = [x.magnitude for x in coil_l1.bbox]
+    xc = np.mean([bb[0], bb[2]])
+    yc = np.mean([bb[1], bb[3]])
+    r = 6*np.linalg.norm([xc - bb[0], yc - bb[1]])
+    model.boundary_generate(xc=xc, yc=yc, radius=r)
+
+    # Add in magnet.
+    mag = Magnet(model,
+                 width=Q(6, &#39;mm&#39;),
+                 height=Q(1, &#39;mm&#39;))
+
+    x_start = coil_l1.lr[0] - mag.width / 2
+    x_end = coil_l1.ll[0] - mag.width / 2
+
+    # Loop magnet through a set of positions.
+    positions_ll = np.linspace(x_start.magnitude, x_end.magnitude, n_pts)
+    forces = Q(np.zeros(len(positions_ll)), &#39;mN&#39;)
+    positions_center = Q(np.zeros(len(positions_ll)), &#39;mm&#39;)
+
+    for i, x in enumerate(positions_ll):
+        print(f&#39;\nSim {i+1:02d}/{n_pts:02d}&#39;, flush=True)
+
+        # Update magnet position
+        mag.ll_set(x=x, y=0.2)
+
+        #  Run sim (mesh happens automatically if something moves.)
+        model.analyze()
+
+        if gui:
+            model.save_image(b_max_tesla=0.6)
+
+        # Gather results
+        forces[i] = mag.force()[0]  # X-component
+        positions_center[i] = mag.center[0]
+
+        print(f&#39;Pos={positions_center[i]:0.3}, Force={forces[i]:0.2}&#39;,
+              flush=True)
+
+    # Normalize force to unit current.
+    forces /= analysis_current.to(&#39;A&#39;).magnitude
+
+    # Get model type
+    t = str(type(coil_l1))
+    idx = t.find(&#39;\&#39;&#39;)
+    t = t[idx+1:]
+    idx = t.find(&#39;\&#39;&#39;)
+    t = t[:idx]
+    t = t.replace(&#39;__main__&#39;, &#39;&#39;)
+
+    import plotly.graph_objects as go
+    fig = go.Figure()
+    trc = go.Scatter(x=positions_center, y=forces)
+    fig.add_trace(trc)
+    fig.update_layout(title=f&#34;Coil Model = {t}&lt;br&gt;Tolerance = {model._precision}&lt;br&gt;Analysis Current (normalized) = {analysis_current}&#34;,
+                      xaxis_title=f&#39;Position [{positions_center.units}]&#39;,
+                      yaxis_title=f&#39;X-Direction Force on Magnet [{forces.units}]&#39;)
+    # file_html = &#39;test-plot.html&#39;
+    file_html = &#39;test-plot.html&#39;
+    fig.write_html(file_html)
+
+    import webbrowser
+    webbrowser.open(file_html)
+
+    # Save data
+    import pandas as pd
+    df = pd.DataFrame()
+    df[&#39;Position&#39;] = pd.Series(positions_center)
+    df[&#39;Force&#39;] = pd.Series(forces)
+    df.to_csv(&#39;test.csv&#39;)
+
+    if gui:
+        from make_movie import make_movie
+        make_movie(&#39;.&#39;, &#39;test.avi&#39;)
+
+    # Loop.
+    # for ...
+    # set mag position
+    # analyze
+    # read force vector</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="femm_model.Circuit"><code class="flex name class">
+<span>class <span class="ident">Circuit</span></span>
+<span>(</span><span>model: <a title="femm_model.Femm" href="#femm_model.Femm">Femm</a> = None, name: str = 'circuit1', current: pint.quantity.Quantity = &lt;Quantity(1, &#x27;ampere&#x27;)&gt;)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Circuit:
+
+    def __init__(self,
+                 model: Femm = None,
+                 name: str = &#39;circuit1&#39;,
+                 current: Q = Q(1, &#39;A&#39;)):
+
+        if model is None:
+            raise ValueError(&#34;Model not specified.&#34;)
+
+        self._name = name
+        self._current = current
+
+        # Register with the model
+        model._circuit_add(self)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def current(self):
+        return self._current</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="femm_model.Circuit.current"><code class="name">var <span class="ident">current</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def current(self):
+    return self._current</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Circuit.name"><code class="name">var <span class="ident">name</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def name(self):
+    return self._name</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="femm_model.CoilConductorsDistributed"><code class="flex name class">
+<span>class <span class="ident">CoilConductorsDistributed</span></span>
+<span>(</span><span>model: <a title="femm_model.Femm" href="#femm_model.Femm">Femm</a> = None, track_width: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, track_spacing: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, track_thickness: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, dia_inside: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, x_center: pint.quantity.Quantity = &lt;Quantity(0, &#x27;millimeter&#x27;)&gt;, y_center: pint.quantity.Quantity = &lt;Quantity(0, &#x27;millimeter&#x27;)&gt;, turns: int = 3, current: pint.quantity.Quantity = &lt;Quantity(1, &#x27;ampere&#x27;)&gt;)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Models a flat PCB coil as a distributed winding (standard FEMM technique).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CoilConductorsDistributed:
+    &#34;&#34;&#34;
+    Models a flat PCB coil as a distributed winding (standard FEMM technique).
+    &#34;&#34;&#34;
+
+    def __init__(self,
+                 model: Femm = None,
+                 track_width: Q = Q(1, &#39;mm&#39;),
+                 track_spacing: Q = Q(1, &#39;mm&#39;),
+                 track_thickness: Q = Q(1, &#39;mm&#39;),
+                 dia_inside: Q = Q(1, &#39;mm&#39;),
+                 x_center: Q = Q(0, &#39;mm&#39;),
+                 y_center: Q = Q(0, &#39;mm&#39;),
+                 turns: int = 3,
+                 current: Q = Q(1, &#39;A&#39;)):
+
+        if model is None:
+            raise ValueError(&#34;Model not specified.&#34;)
+        self._model = model
+
+        # TODO: Make a real property
+        self._turns = turns
+        self._current = current
+
+        self._group = model.new_group_id()
+        print(f&#39;Coil ID: {self._group}&#39;)
+
+        # Name the coil, but it&#39;s not user settable for now.
+        self._name = f&#39;Coil_{self._group}&#39;
+
+        # Create a circuit for the coil.
+        # TODO: How to deal with next coil, with opposite current.
+        self._circuit = Circuit(model=model,
+                                name=f&#39;Circuit_{self._name}&#39;,
+                                current=np.abs(current))
+
+        # Create an array of tracks.
+        self._conductors = []
+
+        # Create and position track.
+        coil_side_width = track_width*turns + track_spacing*(turns-1)
+
+        # ---------------------------
+        # Left side
+        # ---------------------------
+
+        # Created at default position, well outside where we want it
+        # to avoid issues selecting geometry by position.
+        track = Track(model=model,
+                      width=coil_side_width,
+                      height=track_thickness)
+        track.ll_set(
+            x=-(coil_side_width+dia_inside/2), y=track_thickness/2)
+        track.group = self._group
+        self._conductors.append(track)
+
+        # Create FEMM label to mark material, circuit &amp; turn count.
+        (xc, yc) = track.center
+        xc = xc.magnitude
+        yc = yc.magnitude
+        femm.mi_addblocklabel(xc, yc)
+        femm.mi_selectlabel(xc, yc)
+        femm.mi_setblockprop(&#34;Copper&#34;,  # Material to use.  Solid copper for a single trace.
+                             1,         # Auto mesh size
+                             .01,       # Mesh size.  Ignored for auto.
+                             self._circuit.name,
+                             0,
+                             self._group,  # Belongs to coil group.
+                             np.sign(current)*turns)        # Number of turns
+
+        # ---------------------------
+        # Right side
+        # ---------------------------
+
+        # Create and position track.
+        track = Track(model=model,
+                      width=coil_side_width,
+                      height=track_thickness)
+        track.ll_set(x=dia_inside/2, y=track_thickness/2)
+        track.group = self._group
+        self._conductors.append(track)
+
+        # Create FEMM label to mark material, circuit &amp; turn count.
+        (xc, yc) = track.center
+        xc = xc.magnitude
+        yc = yc.magnitude
+        femm.mi_addblocklabel(xc, yc)
+        femm.mi_selectlabel(xc, yc)
+        femm.mi_setblockprop(&#34;Copper&#34;,  # Material to use.  Solid copper for a single trace.
+                             1,         # Auto mesh size
+                             .01,       # Mesh size.  Ignored for auto.
+                             self._circuit.name,
+                             0,
+                             self._group,  # Belongs to coil group.
+                             -np.sign(current)*turns)       # Number of turns, opposite direction
+
+    @property
+    def group(self) -&gt; int:
+        &#34;&#34;&#34;
+        Coil group ID.
+        &#34;&#34;&#34;
+
+        return self._group
+
+    def select_by_group(self):
+        &#34;&#34;&#34;
+        Selects object by its group ID.
+        Object is given an ID upon creation for selection.
+        If group ID is changed, this method will select everything in the group.
+        &#34;&#34;&#34;
+        femm.mi_selectgroup(self._group)
+
+    @property
+    def name(self) -&gt; str:
+        &#34;&#34;&#34;
+        Coil name (read only)
+        &#34;&#34;&#34;
+        return self._name
+
+    @property
+    def bbox(self) -&gt; tuple:
+        &#34;&#34;&#34;
+        Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
+        bounding box lower left corner and x2,y2 represents the 
+        bounding box upper right corner.
+        &#34;&#34;&#34;
+
+        x1 = Q(np.Inf, self._model.units)
+        y1 = Q(np.Inf, self._model.units)
+        x2 = -x1
+        y2 = -y1
+        for track in self._conductors:
+            bb = track.bbox
+            x1 = min([x1, bb[0]])
+            y1 = min([y1, bb[1]])
+            x2 = max([x2, bb[2]])
+            y2 = max([y2, bb[3]])
+
+        return Q([x1.magnitude, y1.magnitude, x2.magnitude, y2.magnitude], self._model.units)
+
+    @property
+    def ll(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower left corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower left corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[0, 1]]
+
+    @property
+    def lr(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower right corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower right corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[2, 1]]
+
+    @property
+    def ul(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of upper left corner.
+
+        Returns:
+            Q: X &amp; Y coords of upper left corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[0, 3]]
+
+    @property
+    def ur(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of upper right corner.
+
+        Returns:
+            Q: X &amp; Y coords of upper right corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[2, 3]]
+
+    def ll_set(self, x: Q = None, y: Q = None):
+        &#34;&#34;&#34;
+        Sets object lower left corner to specified positions.
+        If x or y position is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        ll = self.ll
+
+        # Unit conversions.
+        dx = 0
+        if x is not None:
+            if isinstance(x, Q):
+                x = x.to(self._model.units).magnitude
+            dx = x - ll[0]
+
+        dy = 0
+        if y is not None:
+            if isinstance(y, Q):
+                y = y.to(self._model.units).magnitude
+            dy = y - ll[1]
+
+        dx = Q(dx, self._model.units)
+        dy = Q(dy, self._model.units)
+
+        self.translate(dx, dy)
+
+    def ul_set(self, x: Q = None, y: Q = None):
+        &#34;&#34;&#34;
+        Sets object upper left corner to specified positions.
+        If x or y position is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        ul = self.ul
+
+        # Unit conversions.
+        dx = 0
+        if x is not None:
+            if isinstance(x, Q):
+                x = x.to(self._model.units).magnitude
+            dx = x - ul[0]
+
+        dy = 0
+        if y is not None:
+            if isinstance(y, Q):
+                y = y.to(self._model.units).magnitude
+            dy = y - ul[1]
+
+        dx = Q(dx, self._model.units)
+        dy = Q(dy, self._model.units)
+
+        self.translate(dx, dy)
+
+    def translate(self, dx: Q = Q(0, &#39;mm&#39;), dy: Q = Q(0, &#39;mm&#39;)):
+        &#34;&#34;&#34;
+        Translates object specified distances in X &amp; Y.
+        If dx or dy is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        if isinstance(dx, Q):
+            dx = dx.to(self._model.units).magnitude
+        if isinstance(dy, Q):
+            dy = dy.to(self._model.units).magnitude
+
+        self.select_by_group()
+        femm.mi_movetranslate(dx, dy)
+        femm.mi_clearselected()
+
+        # Update internal data
+        self._x1 += dx
+        self._x2 += dx
+        self._y1 += dy
+        self._y2 += dy
+
+        self._model._mesh_is_dirty = True</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="femm_model.CoilConductorsDistributed.bbox"><code class="name">var <span class="ident">bbox</span> : tuple</code></dt>
+<dd>
+<div class="desc"><p>Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the
+bounding box lower left corner and x2,y2 represents the
+bounding box upper right corner.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bbox(self) -&gt; tuple:
+    &#34;&#34;&#34;
+    Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
+    bounding box lower left corner and x2,y2 represents the 
+    bounding box upper right corner.
+    &#34;&#34;&#34;
+
+    x1 = Q(np.Inf, self._model.units)
+    y1 = Q(np.Inf, self._model.units)
+    x2 = -x1
+    y2 = -y1
+    for track in self._conductors:
+        bb = track.bbox
+        x1 = min([x1, bb[0]])
+        y1 = min([y1, bb[1]])
+        x2 = max([x2, bb[2]])
+        y2 = max([y2, bb[3]])
+
+    return Q([x1.magnitude, y1.magnitude, x2.magnitude, y2.magnitude], self._model.units)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsDistributed.group"><code class="name">var <span class="ident">group</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Coil group ID.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def group(self) -&gt; int:
+    &#34;&#34;&#34;
+    Coil group ID.
+    &#34;&#34;&#34;
+
+    return self._group</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsDistributed.ll"><code class="name">var <span class="ident">ll</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Position of lower left corner.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>X &amp; Y coords of lower left corner of Coil.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def ll(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Position of lower left corner.
+
+    Returns:
+        Q: X &amp; Y coords of lower left corner of Coil.
+    &#34;&#34;&#34;
+
+    return self.bbox[[0, 1]]</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsDistributed.lr"><code class="name">var <span class="ident">lr</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Position of lower right corner.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>X &amp; Y coords of lower right corner of Coil.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def lr(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Position of lower right corner.
+
+    Returns:
+        Q: X &amp; Y coords of lower right corner of Coil.
+    &#34;&#34;&#34;
+
+    return self.bbox[[2, 1]]</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsDistributed.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>Coil name (read only)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def name(self) -&gt; str:
+    &#34;&#34;&#34;
+    Coil name (read only)
+    &#34;&#34;&#34;
+    return self._name</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsDistributed.ul"><code class="name">var <span class="ident">ul</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Position of upper left corner.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>X &amp; Y coords of upper left corner of Coil.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def ul(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Position of upper left corner.
+
+    Returns:
+        Q: X &amp; Y coords of upper left corner of Coil.
+    &#34;&#34;&#34;
+
+    return self.bbox[[0, 3]]</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsDistributed.ur"><code class="name">var <span class="ident">ur</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Position of upper right corner.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>X &amp; Y coords of upper right corner of Coil.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def ur(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Position of upper right corner.
+
+    Returns:
+        Q: X &amp; Y coords of upper right corner of Coil.
+    &#34;&#34;&#34;
+
+    return self.bbox[[2, 3]]</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="femm_model.CoilConductorsDistributed.ll_set"><code class="name flex">
+<span>def <span class="ident">ll_set</span></span>(<span>self, x: pint.quantity.Quantity = None, y: pint.quantity.Quantity = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sets object lower left corner to specified positions.
+If x or y position is not specified, that coordinate is not changed.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def ll_set(self, x: Q = None, y: Q = None):
+    &#34;&#34;&#34;
+    Sets object lower left corner to specified positions.
+    If x or y position is not specified, that coordinate is not changed.
+    &#34;&#34;&#34;
+
+    ll = self.ll
+
+    # Unit conversions.
+    dx = 0
+    if x is not None:
+        if isinstance(x, Q):
+            x = x.to(self._model.units).magnitude
+        dx = x - ll[0]
+
+    dy = 0
+    if y is not None:
+        if isinstance(y, Q):
+            y = y.to(self._model.units).magnitude
+        dy = y - ll[1]
+
+    dx = Q(dx, self._model.units)
+    dy = Q(dy, self._model.units)
+
+    self.translate(dx, dy)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsDistributed.select_by_group"><code class="name flex">
+<span>def <span class="ident">select_by_group</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Selects object by its group ID.
+Object is given an ID upon creation for selection.
+If group ID is changed, this method will select everything in the group.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def select_by_group(self):
+    &#34;&#34;&#34;
+    Selects object by its group ID.
+    Object is given an ID upon creation for selection.
+    If group ID is changed, this method will select everything in the group.
+    &#34;&#34;&#34;
+    femm.mi_selectgroup(self._group)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsDistributed.translate"><code class="name flex">
+<span>def <span class="ident">translate</span></span>(<span>self, dx: pint.quantity.Quantity = &lt;Quantity(0, &#x27;millimeter&#x27;)&gt;, dy: pint.quantity.Quantity = &lt;Quantity(0, &#x27;millimeter&#x27;)&gt;)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Translates object specified distances in X &amp; Y.
+If dx or dy is not specified, that coordinate is not changed.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def translate(self, dx: Q = Q(0, &#39;mm&#39;), dy: Q = Q(0, &#39;mm&#39;)):
+    &#34;&#34;&#34;
+    Translates object specified distances in X &amp; Y.
+    If dx or dy is not specified, that coordinate is not changed.
+    &#34;&#34;&#34;
+
+    if isinstance(dx, Q):
+        dx = dx.to(self._model.units).magnitude
+    if isinstance(dy, Q):
+        dy = dy.to(self._model.units).magnitude
+
+    self.select_by_group()
+    femm.mi_movetranslate(dx, dy)
+    femm.mi_clearselected()
+
+    # Update internal data
+    self._x1 += dx
+    self._x2 += dx
+    self._y1 += dy
+    self._y2 += dy
+
+    self._model._mesh_is_dirty = True</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsDistributed.ul_set"><code class="name flex">
+<span>def <span class="ident">ul_set</span></span>(<span>self, x: pint.quantity.Quantity = None, y: pint.quantity.Quantity = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sets object upper left corner to specified positions.
+If x or y position is not specified, that coordinate is not changed.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def ul_set(self, x: Q = None, y: Q = None):
+    &#34;&#34;&#34;
+    Sets object upper left corner to specified positions.
+    If x or y position is not specified, that coordinate is not changed.
+    &#34;&#34;&#34;
+
+    ul = self.ul
+
+    # Unit conversions.
+    dx = 0
+    if x is not None:
+        if isinstance(x, Q):
+            x = x.to(self._model.units).magnitude
+        dx = x - ul[0]
+
+    dy = 0
+    if y is not None:
+        if isinstance(y, Q):
+            y = y.to(self._model.units).magnitude
+        dy = y - ul[1]
+
+    dx = Q(dx, self._model.units)
+    dy = Q(dy, self._model.units)
+
+    self.translate(dx, dy)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="femm_model.CoilConductorsIndividual"><code class="flex name class">
+<span>class <span class="ident">CoilConductorsIndividual</span></span>
+<span>(</span><span>model: <a title="femm_model.Femm" href="#femm_model.Femm">Femm</a> = None, track_width: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, track_spacing: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, track_thickness: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, dia_inside: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, x_center: pint.quantity.Quantity = &lt;Quantity(0, &#x27;millimeter&#x27;)&gt;, y_center: pint.quantity.Quantity = &lt;Quantity(0, &#x27;millimeter&#x27;)&gt;, turns: int = 3, current: pint.quantity.Quantity = &lt;Quantity(1, &#x27;ampere&#x27;)&gt;)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Models a flat PCB coil as a individual winding entities (two Rects per turn).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CoilConductorsIndividual:
+    &#34;&#34;&#34;
+    Models a flat PCB coil as a individual winding entities (two Rects per turn).
+    &#34;&#34;&#34;
+
+    def __init__(self,
+                 model: Femm = None,
+                 track_width: Q = Q(1, &#39;mm&#39;),
+                 track_spacing: Q = Q(1, &#39;mm&#39;),
+                 track_thickness: Q = Q(1, &#39;mm&#39;),
+                 dia_inside: Q = Q(1, &#39;mm&#39;),
+                 x_center: Q = Q(0, &#39;mm&#39;),
+                 y_center: Q = Q(0, &#39;mm&#39;),
+                 turns: int = 3,
+                 current: Q = Q(1, &#39;A&#39;)):
+
+        if model is None:
+            raise ValueError(&#34;Model not specified.&#34;)
+        self._model = model
+
+        self._group = model.new_group_id()
+        print(f&#39;Coil ID: {self._group}&#39;)
+
+        # Name the coil, but it&#39;s not user settable for now.
+        self._name = f&#39;Coil_{self._group}&#39;
+
+        # Create a circuit for the coil.
+        # TODO: How to deal with next coil, with opposite current.
+        self._circuit = Circuit(model=model,
+                                name=f&#39;Circuit_{self._name}&#39;,
+                                current=current)
+
+        # Create an array of tracks.
+        self._conductors = []
+
+        # Left side, from inside out.
+        offset = x_center - track_width - dia_inside/2
+        for i in np.arange(0, turns):
+            # Create and position track.
+            # Created at default position, well outside where we want it
+            # to avoid issues selecting geometry by position.
+            track = Track(model=model,
+                          width=track_width,
+                          height=track_thickness)
+            track.ll_set(x=offset, y=track_thickness/2)
+            # TODO: Put track into the coil&#39;s group.
+
+            # Create FEMM label to mark material, circuit &amp; turn count.
+            (xc, yc) = track.center
+            xc = xc.magnitude
+            yc = yc.magnitude
+            femm.mi_addblocklabel(xc, yc)
+            femm.mi_selectlabel(xc, yc)
+            femm.mi_setblockprop(&#34;Copper&#34;,  # Material to use.  Solid copper for a single trace.
+                                 1,         # Auto mesh size
+                                 .01,       # Mesh size.  Ignored for auto.
+                                 # Magnetization direction, ignored.
+                                 self._circuit.name,
+                                 0,
+                                 self._group,  # Belongs to coil group.
+                                 1)          # Number of turns
+
+            # Bookkeeping
+            offset -= (track_width + track_spacing)
+            self._conductors.append(track)
+
+        # Right side, from inside out
+        offset = x_center + dia_inside/2
+        for i in np.arange(0, turns):
+            # Create and position track.
+            track = Track(model=model,
+                          width=track_width,
+                          height=track_thickness)
+            track.ll_set(x=offset, y=track_thickness/2)
+
+            # Create FEMM label to mark material, circuit &amp; turn count.
+            (xc, yc) = track.center
+            xc = xc.magnitude
+            yc = yc.magnitude
+            femm.mi_addblocklabel(xc, yc)
+            femm.mi_selectlabel(xc, yc)
+            femm.mi_setblockprop(&#34;Copper&#34;,  # Material to use.  Solid copper for a single trace.
+                                 1,         # Auto mesh size
+                                 .01,       # Mesh size.  Ignored for auto.
+                                 # Magnetization direction, ignored.
+                                 self._circuit.name,
+                                 0,
+                                 self._group,  # Belongs to coil group.
+                                 -1)          # Number of turns, opposite direction
+
+            # Bookkeeping
+            offset += track_width + track_spacing
+            self._conductors.append(track)
+
+    @property
+    def group(self) -&gt; int:
+        &#34;&#34;&#34;
+        Coil group ID.
+        &#34;&#34;&#34;
+
+        return self._group
+
+    @property
+    def name(self) -&gt; str:
+        &#34;&#34;&#34;
+        Coil name (read only)
+        &#34;&#34;&#34;
+        return self._name
+
+    @property
+    def bbox(self) -&gt; tuple:
+        &#34;&#34;&#34;
+        Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
+        bounding box lower left corner and x2,y2 represents the 
+        bounding box upper right corner.
+        &#34;&#34;&#34;
+
+        x1 = Q(np.Inf, self._model.units)
+        y1 = Q(np.Inf, self._model.units)
+        x2 = -x1
+        y2 = -y1
+        for track in self._conductors:
+            bb = track.bbox
+            x1 = min([x1, bb[0]])
+            y1 = min([y1, bb[1]])
+            x2 = max([x2, bb[2]])
+            y2 = max([y2, bb[3]])
+
+        return Q([x1.magnitude, y1.magnitude, x2.magnitude, y2.magnitude], self._model.units)
+
+    @property
+    def ll(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower left corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower left corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[0, 1]]
+
+    @property
+    def lr(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower right corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower right corner of Coil.
+        &#34;&#34;&#34;
+
+        return self.bbox[[2, 1]]</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="femm_model.CoilConductorsIndividual.bbox"><code class="name">var <span class="ident">bbox</span> : tuple</code></dt>
+<dd>
+<div class="desc"><p>Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the
+bounding box lower left corner and x2,y2 represents the
+bounding box upper right corner.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bbox(self) -&gt; tuple:
+    &#34;&#34;&#34;
+    Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
+    bounding box lower left corner and x2,y2 represents the 
+    bounding box upper right corner.
+    &#34;&#34;&#34;
+
+    x1 = Q(np.Inf, self._model.units)
+    y1 = Q(np.Inf, self._model.units)
+    x2 = -x1
+    y2 = -y1
+    for track in self._conductors:
+        bb = track.bbox
+        x1 = min([x1, bb[0]])
+        y1 = min([y1, bb[1]])
+        x2 = max([x2, bb[2]])
+        y2 = max([y2, bb[3]])
+
+    return Q([x1.magnitude, y1.magnitude, x2.magnitude, y2.magnitude], self._model.units)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsIndividual.group"><code class="name">var <span class="ident">group</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Coil group ID.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def group(self) -&gt; int:
+    &#34;&#34;&#34;
+    Coil group ID.
+    &#34;&#34;&#34;
+
+    return self._group</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsIndividual.ll"><code class="name">var <span class="ident">ll</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Position of lower left corner.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>X &amp; Y coords of lower left corner of Coil.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def ll(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Position of lower left corner.
+
+    Returns:
+        Q: X &amp; Y coords of lower left corner of Coil.
+    &#34;&#34;&#34;
+
+    return self.bbox[[0, 1]]</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsIndividual.lr"><code class="name">var <span class="ident">lr</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Position of lower right corner.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>X &amp; Y coords of lower right corner of Coil.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def lr(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Position of lower right corner.
+
+    Returns:
+        Q: X &amp; Y coords of lower right corner of Coil.
+    &#34;&#34;&#34;
+
+    return self.bbox[[2, 1]]</code></pre>
+</details>
+</dd>
+<dt id="femm_model.CoilConductorsIndividual.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>Coil name (read only)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def name(self) -&gt; str:
+    &#34;&#34;&#34;
+    Coil name (read only)
+    &#34;&#34;&#34;
+    return self._name</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="femm_model.Femm"><code class="flex name class">
+<span>class <span class="ident">Femm</span></span>
+<span>(</span><span>gui: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Femm:
+    def __init__(self, gui: bool = True):
+
+        self._circuits = []
+        self._next_group_id = 0
+
+        # Open Femm and a model file.
+        self._gui = gui
+        if gui:
+            femm.openfemm(0)  # 0=Show GUI, 1=Hide GUI
+        else:
+            femm.openfemm(1)  # 0=Show GUI, 1=Hide GUI
+
+        femm.newdocument(0)  # 0=Magnetics problem
+
+        # Default object creation location.
+        # Because FEMM requires selection of objects by position, you want to
+        # create things in a position away from where you&#39;ll be working.
+        self._default_create_x = -100
+        self._default_create_y = -100
+
+        # Problem definition
+        frequency = 0  # static
+        self._units = &#39;millimeters&#39;
+        prob_type = &#39;planar&#39;
+        precision = 1e-8  # standard value
+        precision = 1e-9  # Stabilized better with PCB coil.
+
+        self._precision = precision
+
+        depth = 1  # in &#34;units&#34;.  Using unit value lets us easily scale later.
+        femm.mi_probdef(frequency, self._units,
+                        prob_type, self._precision, depth)
+
+        femm.main_resize(500, 1000)  # Set FEMM window size in screen pixels
+
+        # Define materials in use in the problem.
+        matl_mag = &#34;N52&#34;
+        # Solid copper, must define individual trace wires.
+        matl_coil = &#34;Copper&#34;
+        matl_air = &#34;Air&#34;
+        matl_list = [matl_mag, matl_coil, matl_air]
+        for matl in matl_list:
+            femm.mi_getmaterial(matl)
+        self._materials = matl_list
+
+        # Boundary
+        self._boundary_group = None
+
+        # Model file name
+        # TODO: Make property &amp; handle.
+        self._filename_model = &#39;test.FEM&#39;
+
+        # TODO: Make property &amp; handle
+        self._filename_image = &#39;test-image&#39;
+        self._image_index = 1
+
+        # Model state tracking
+        self._has_been_saved = False    # Has model ever been saved
+        self._mesh_is_dirty = True      # Geometry has changed
+        self._solution_is_dirty = True  # Need to rerun analysis
+
+        # FEMM variable ID dictionairies.
+        self._block_integral_vars = {&#39;Force from Stress Tensor - X&#39;: 18,
+                                     &#39;Force from Stress Tensor - Y&#39;: 19}
+
+    @property
+    def units(self) -&gt; str:
+
+        return self._units
+
+    @property
+    def materials(self) -&gt; list:
+        &#34;&#34;&#34;
+        List of materials defined for use in model.
+
+        Returns:
+            list: List of materials defined in model.
+        &#34;&#34;&#34;
+
+        return self._materials
+
+    def new_group_id(self) -&gt; int:
+        &#34;&#34;&#34;
+        Returns next available group ID.
+        &#34;&#34;&#34;
+
+        self._next_group_id += 1
+        return self._next_group_id
+
+    def boundary_generate(self,
+                          xc: Q = Q(0, &#39;mm&#39;),
+                          yc: Q = Q(0, &#39;mm&#39;),
+                          radius: Q = Q(50, &#39;mm&#39;)) -&gt; None:
+        &#34;&#34;&#34;
+        Generates boundary conditions.
+        NOTE: Can only be run once per model.
+
+        Args:
+            xc (Q, optional): X coord of center of circular boundary. Defaults to Q(0,&#39;mm&#39;).
+            yc (Q, optional): Y coord of center of circular boundary. Defaults to Q(0,&#39;mm&#39;).
+            radius (Q, optional): Radius of circular boundary. Defaults to Q(50,&#39;mm&#39;).
+
+        Raises:
+            ValueError: Boundary condition already exists.
+        &#34;&#34;&#34;
+
+        # TODO: Support deletion and re-creation of boundary group.
+        if self._boundary_group is not None:
+            raise ValueError(&#34;Boundary condition specification exists.&#34;)
+
+        # Handle units if provided
+        if isinstance(xc, Q):
+            xc = xc.to(self._units).magnitude
+        if isinstance(yc, Q):
+            yc = yc.to(self._units).magnitude
+        if isinstance(radius, Q):
+            radius = radius.to(self._units)
+
+        self._boundary_group = model.new_group_id()
+
+        femm.mi_makeABC(7,       # Number of shells for boundary.  7 is standard.
+                        radius,  # Radius of boundary shell circle
+                        xc,      # Center of boundary shell circle
+                        yc,
+                        0)       # Boundary condition: 0=Dirichlet, 1=Neumann
+
+        # Fill in boundary zone with Air
+        y_l = yc+radius*0.95     # Place label just inside boundary.
+        femm.mi_addblocklabel(xc, y_l)
+        femm.mi_selectlabel(xc, y_l)
+        femm.mi_setblockprop(&#34;Air&#34;,
+                             1,     # Auto mesh
+                             0.01,  # Mesh size, not used.
+                             &#34;&#34;,    # Circuit name.  &#34;&#34; =&gt; No circuit
+                             0,     # Magnetization dir, ignored.
+                             self._boundary_group)
+
+    def mesh_generate(self) -&gt; None:
+        &#34;&#34;&#34;
+        Generates mesh for model.
+        NOTE: model must be saved first.
+
+        Returns:
+            None.
+        &#34;&#34;&#34;
+
+        if self._boundary_group is None:
+            raise RuntimeError(
+                &#39;Model does not have boundary, run boundary_generate&#39;)
+
+        if not self._has_been_saved:
+            femm.mi_saveas(self._filename_model)
+            self._has_been_saved = True
+
+        self._solution_is_dirty = True
+        print(&#39;Generating mesh ... &#39;, end=&#34;&#34;, flush=True)
+        femm.mi_createmesh()
+        print(&#39;done&#39;, flush=True)
+
+    def analyze(self):
+
+        # Remesh if needed
+        if self._mesh_is_dirty:
+            self.mesh_generate()
+
+        print(&#39;Running FEMM analysis ... &#39;, end=&#34;&#34;, flush=True)
+        femm.mi_analyze()
+        femm.mi_loadsolution()
+        print(&#39;done&#39;, flush=True)
+
+        self._solution_is_dirty = False
+
+    def save_image(self, b_max_tesla: float = 1) -&gt; None:
+        &#34;&#34;&#34;
+        Saves B-field image from last analysis default image file name.
+        Files are indexed by analysis count since Femm object creation.
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+
+        if not self._gui:
+            raise ValueError(&#39;Cannot save images if GUI not enabled.&#39;)
+
+        if self._solution_is_dirty:
+            raise RuntimeError(&#39;Must run analysis before capturing image.&#39;)
+
+        filename = f&#39;{self._filename_image}-{self._image_index:04d}.png&#39;
+        print(f&#39;Saving image file: {filename} ... &#39;, end=&#34;&#34;, flush=True)
+
+        # Capture B-field image
+        femm.mo_zoomnatural()
+        femm.mo_showdensityplot(1,  # Legend. 0=Off, 1=On
+                                0,  # 0=color, 1=grayscale
+                                b_max_tesla,  # Upper disaply limit
+                                0,   # Lower display limit
+                                &#39;bmag&#39;)
+        femm.mo_savebitmap(filename)
+        self._image_index += 1
+        print(&#39;done&#39;, flush=True)
+
+    @property
+    def boundary_group(self) -&gt; int:
+        &#34;&#34;&#34;
+        Boundary group ID.
+
+        Returns:
+            int: Group ID of boundary conditions.
+        &#34;&#34;&#34;
+
+        return self._boundary_group
+
+    def _circuit_add(self, circuit=None):
+        &#34;&#34;&#34;Adds name of circuit to list for tracking.
+            Should not be called directly.&#34;&#34;&#34;
+
+        self._circuits.append(circuit.name)
+
+        # Register with femm
+        femm.mi_addcircprop(circuit.name,
+                            circuit.current.to(&#39;A&#39;).magnitude,
+                            1)  # series -&gt; same currents for all elements.</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="femm_model.Femm.boundary_group"><code class="name">var <span class="ident">boundary_group</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Boundary group ID.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int</code></dt>
+<dd>Group ID of boundary conditions.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def boundary_group(self) -&gt; int:
+    &#34;&#34;&#34;
+    Boundary group ID.
+
+    Returns:
+        int: Group ID of boundary conditions.
+    &#34;&#34;&#34;
+
+    return self._boundary_group</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Femm.materials"><code class="name">var <span class="ident">materials</span> : list</code></dt>
+<dd>
+<div class="desc"><p>List of materials defined for use in model.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code></dt>
+<dd>List of materials defined in model.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def materials(self) -&gt; list:
+    &#34;&#34;&#34;
+    List of materials defined for use in model.
+
+    Returns:
+        list: List of materials defined in model.
+    &#34;&#34;&#34;
+
+    return self._materials</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Femm.units"><code class="name">var <span class="ident">units</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def units(self) -&gt; str:
+
+    return self._units</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="femm_model.Femm.analyze"><code class="name flex">
+<span>def <span class="ident">analyze</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def analyze(self):
+
+    # Remesh if needed
+    if self._mesh_is_dirty:
+        self.mesh_generate()
+
+    print(&#39;Running FEMM analysis ... &#39;, end=&#34;&#34;, flush=True)
+    femm.mi_analyze()
+    femm.mi_loadsolution()
+    print(&#39;done&#39;, flush=True)
+
+    self._solution_is_dirty = False</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Femm.boundary_generate"><code class="name flex">
+<span>def <span class="ident">boundary_generate</span></span>(<span>self, xc: pint.quantity.Quantity = &lt;Quantity(0, &#x27;millimeter&#x27;)&gt;, yc: pint.quantity.Quantity = &lt;Quantity(0, &#x27;millimeter&#x27;)&gt;, radius: pint.quantity.Quantity = &lt;Quantity(50, &#x27;millimeter&#x27;)&gt;) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generates boundary conditions.
+NOTE: Can only be run once per model.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>xc</code></strong> :&ensp;<code>Q</code>, optional</dt>
+<dd>X coord of center of circular boundary. Defaults to Q(0,'mm').</dd>
+<dt><strong><code>yc</code></strong> :&ensp;<code>Q</code>, optional</dt>
+<dd>Y coord of center of circular boundary. Defaults to Q(0,'mm').</dd>
+<dt><strong><code>radius</code></strong> :&ensp;<code>Q</code>, optional</dt>
+<dd>Radius of circular boundary. Defaults to Q(50,'mm').</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>Boundary condition already exists.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def boundary_generate(self,
+                      xc: Q = Q(0, &#39;mm&#39;),
+                      yc: Q = Q(0, &#39;mm&#39;),
+                      radius: Q = Q(50, &#39;mm&#39;)) -&gt; None:
+    &#34;&#34;&#34;
+    Generates boundary conditions.
+    NOTE: Can only be run once per model.
+
+    Args:
+        xc (Q, optional): X coord of center of circular boundary. Defaults to Q(0,&#39;mm&#39;).
+        yc (Q, optional): Y coord of center of circular boundary. Defaults to Q(0,&#39;mm&#39;).
+        radius (Q, optional): Radius of circular boundary. Defaults to Q(50,&#39;mm&#39;).
+
+    Raises:
+        ValueError: Boundary condition already exists.
+    &#34;&#34;&#34;
+
+    # TODO: Support deletion and re-creation of boundary group.
+    if self._boundary_group is not None:
+        raise ValueError(&#34;Boundary condition specification exists.&#34;)
+
+    # Handle units if provided
+    if isinstance(xc, Q):
+        xc = xc.to(self._units).magnitude
+    if isinstance(yc, Q):
+        yc = yc.to(self._units).magnitude
+    if isinstance(radius, Q):
+        radius = radius.to(self._units)
+
+    self._boundary_group = model.new_group_id()
+
+    femm.mi_makeABC(7,       # Number of shells for boundary.  7 is standard.
+                    radius,  # Radius of boundary shell circle
+                    xc,      # Center of boundary shell circle
+                    yc,
+                    0)       # Boundary condition: 0=Dirichlet, 1=Neumann
+
+    # Fill in boundary zone with Air
+    y_l = yc+radius*0.95     # Place label just inside boundary.
+    femm.mi_addblocklabel(xc, y_l)
+    femm.mi_selectlabel(xc, y_l)
+    femm.mi_setblockprop(&#34;Air&#34;,
+                         1,     # Auto mesh
+                         0.01,  # Mesh size, not used.
+                         &#34;&#34;,    # Circuit name.  &#34;&#34; =&gt; No circuit
+                         0,     # Magnetization dir, ignored.
+                         self._boundary_group)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Femm.mesh_generate"><code class="name flex">
+<span>def <span class="ident">mesh_generate</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generates mesh for model.
+NOTE: model must be saved first.</p>
+<h2 id="returns">Returns</h2>
+<p>None.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def mesh_generate(self) -&gt; None:
+    &#34;&#34;&#34;
+    Generates mesh for model.
+    NOTE: model must be saved first.
+
+    Returns:
+        None.
+    &#34;&#34;&#34;
+
+    if self._boundary_group is None:
+        raise RuntimeError(
+            &#39;Model does not have boundary, run boundary_generate&#39;)
+
+    if not self._has_been_saved:
+        femm.mi_saveas(self._filename_model)
+        self._has_been_saved = True
+
+    self._solution_is_dirty = True
+    print(&#39;Generating mesh ... &#39;, end=&#34;&#34;, flush=True)
+    femm.mi_createmesh()
+    print(&#39;done&#39;, flush=True)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Femm.new_group_id"><code class="name flex">
+<span>def <span class="ident">new_group_id</span></span>(<span>self) ‑> int</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns next available group ID.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def new_group_id(self) -&gt; int:
+    &#34;&#34;&#34;
+    Returns next available group ID.
+    &#34;&#34;&#34;
+
+    self._next_group_id += 1
+    return self._next_group_id</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Femm.save_image"><code class="name flex">
+<span>def <span class="ident">save_image</span></span>(<span>self, b_max_tesla: float = 1) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Saves B-field image from last analysis default image file name.
+Files are indexed by analysis count since Femm object creation.</p>
+<h2 id="returns">Returns</h2>
+<p>None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save_image(self, b_max_tesla: float = 1) -&gt; None:
+    &#34;&#34;&#34;
+    Saves B-field image from last analysis default image file name.
+    Files are indexed by analysis count since Femm object creation.
+
+    Returns:
+        None
+    &#34;&#34;&#34;
+
+    if not self._gui:
+        raise ValueError(&#39;Cannot save images if GUI not enabled.&#39;)
+
+    if self._solution_is_dirty:
+        raise RuntimeError(&#39;Must run analysis before capturing image.&#39;)
+
+    filename = f&#39;{self._filename_image}-{self._image_index:04d}.png&#39;
+    print(f&#39;Saving image file: {filename} ... &#39;, end=&#34;&#34;, flush=True)
+
+    # Capture B-field image
+    femm.mo_zoomnatural()
+    femm.mo_showdensityplot(1,  # Legend. 0=Off, 1=On
+                            0,  # 0=color, 1=grayscale
+                            b_max_tesla,  # Upper disaply limit
+                            0,   # Lower display limit
+                            &#39;bmag&#39;)
+    femm.mo_savebitmap(filename)
+    self._image_index += 1
+    print(&#39;done&#39;, flush=True)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="femm_model.Magnet"><code class="flex name class">
+<span>class <span class="ident">Magnet</span></span>
+<span>(</span><span>model: <a title="femm_model.Femm" href="#femm_model.Femm">Femm</a> = None, width: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, height: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, x: pint.quantity.Quantity = None, y: pint.quantity.Quantity = None, material: str = 'N52', angle: pint.quantity.Quantity = &lt;Quantity(90, &#x27;degree&#x27;)&gt;)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>FEMM model Magnet object.</p>
+<p>Magnet constructor.</p>
+<p>NOTE: Recommend that x &amp; y params are left at default.
+Place the magnet after creation.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>model</code></strong> :&ensp;<code><a title="femm_model.Femm" href="#femm_model.Femm">Femm</a></code></dt>
+<dd>FEMM model to which magnet belongs.</dd>
+<dt><strong><code>width</code></strong> :&ensp;<code>Q</code>, optional</dt>
+<dd>Width of magnet. Defaults to Q(1, 'mm').</dd>
+<dt><strong><code>height</code></strong> :&ensp;<code>Q</code>, optional</dt>
+<dd>Height of magnet. Defaults to Q(1, 'mm').</dd>
+<dt><strong><code>x</code></strong> :&ensp;<code>Q</code>, optional</dt>
+<dd>X coord of create position. Defaults to None.</dd>
+<dt><strong><code>y</code></strong> :&ensp;<code>Q</code>, optional</dt>
+<dd>Y coord of create positoin. Defaults to None.</dd>
+<dt><strong><code>material</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Magnetic material. Defaults to "N52".</dd>
+<dt><strong><code>angle</code></strong> :&ensp;<code>Q</code>, optional</dt>
+<dd>Magnitization direction. Defaults to Q(90, 'deg').</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Magnet(Rect):
+    &#34;&#34;&#34;
+    FEMM model Magnet object.
+    &#34;&#34;&#34;
+
+    def __init__(self,
+                 model: Femm = None,
+                 width: Q = Q(1, &#39;mm&#39;),
+                 height: Q = Q(1, &#39;mm&#39;),
+                 x: Q = None,
+                 y: Q = None,
+                 material: str = &#34;N52&#34;,
+                 angle: Q = Q(90, &#39;deg&#39;)):
+        &#34;&#34;&#34;
+        Magnet constructor.
+
+        NOTE: Recommend that x &amp; y params are left at default.
+              Place the magnet after creation.
+
+        Args:
+            model (Femm): FEMM model to which magnet belongs.
+            width (Q, optional): Width of magnet. Defaults to Q(1, &#39;mm&#39;).
+            height (Q, optional): Height of magnet. Defaults to Q(1, &#39;mm&#39;).
+            x (Q, optional): X coord of create position. Defaults to None.
+            y (Q, optional): Y coord of create positoin. Defaults to None.
+            material (str, optional): Magnetic material. Defaults to &#34;N52&#34;.
+            angle (Q, optional): Magnitization direction. Defaults to Q(90, &#39;deg&#39;).
+        &#34;&#34;&#34;
+
+        # Init Rect
+        super().__init__(model, width, height, x, y)
+
+        # Magnet stuff
+        self._material = None
+        self.material = material
+
+        # Magnitization direction
+        self._angle = None
+        self.angle = angle
+
+        # Magnet material label
+        (x, y) = [n.magnitude for n in self.center]
+        femm.mi_addblocklabel(x, y)
+        femm.mi_selectlabel(x, y)
+        femm.mi_setblockprop(self.material,
+                             1,     # Auto mesh
+                             0.01,  # Mesh size, not used.
+                             &#34;&#34;,    # Circuit name.  &#34;&#34; =&gt; No circuit
+                             # Magnetization dir.
+                             self.angle.to(&#39;deg&#39;).magnitude,
+                             self.group)
+
+    @property
+    def material(self) -&gt; str:
+        &#34;&#34;&#34;
+        Magnet material.
+
+        Returns:
+            str: Magnet material.
+        &#34;&#34;&#34;
+
+        return self._material
+
+    @material.setter
+    def material(self, value: str = None) -&gt; None:
+        &#34;&#34;&#34;
+        Sets magnetic material.
+
+        Args:
+            value (str): Material property name per FEMM.
+
+        Raises:
+            ValueError: No material specified.
+
+        Returns:
+            None.
+        &#34;&#34;&#34;
+
+        if value is None:
+            raise ValueError(&#39;No magenet material specified.&#39;)
+
+        matls = self._model.materials
+        if value not in matls:
+            raise ValueError(
+                f&#39;Material &#34;{value}&#34; not in materials list for model: {matls}&#39;)
+
+        # TODO: Allow setting of new materials.
+        # Requires changing a lable property, likely deleting and recreating.
+        if self._material is not None:
+            raise ValueError(
+                &#39;Modifying magnetic material not currently supported.&#39;)
+
+        self._material = value
+        self._model._solution_is_dirty = True
+
+    @property
+    def angle(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Returns magnets magnetization angle (x-axis = 0).
+
+        Returns:
+            Q: Angle of magnitization.
+        &#34;&#34;&#34;
+
+        return Q(self._angle, &#39;deg&#39;)
+
+    @angle.setter
+    def angle(self, value: Q = None) -&gt; None:
+        &#34;&#34;&#34;
+        Sets angle of magnitization.
+        NOTE: Currently can only be set on instantiation.
+
+        Args:
+            value (Q): Angle of magnitization (x-axis = 0). Defaults to None.
+
+        Raises:
+            ValueError: If angle already set or not proper units.
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+
+        if value is None:
+            raise ValueError(&#39;No magnetization angle specified.&#39;)
+
+        if isinstance(value, Q):
+            value = value.to(&#39;deg&#39;).magnitude
+
+        if self._angle is not None:
+            raise ValueError(
+                &#39;Modifying magnetic angle not currently supported.&#39;)
+
+        self._angle = value
+
+        self._model._solution_is_dirty = True
+
+    def force(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Returns force vector acting on magnet.
+
+        Raises:
+            RuntimeError: Model analysis must be run before calling.
+
+        Returns:
+            Q: Force vector 
+        &#34;&#34;&#34;
+
+        if self._model._solution_is_dirty:
+            raise RuntimeError(&#39;Model analysis has not been run.&#39;)
+
+        # Select the magnet, then calc the force on magnet via stress tensor.
+        femm.mo_clearblock()
+        femm.mo_groupselectblock(self.group)
+        fx = femm.mo_blockintegral(
+            self._model._block_integral_vars[&#39;Force from Stress Tensor - X&#39;])
+        fy = femm.mo_blockintegral(
+            self._model._block_integral_vars[&#39;Force from Stress Tensor - Y&#39;])
+
+        return Q([fx, fy], &#39;N&#39;)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="femm_model.Rect" href="#femm_model.Rect">Rect</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="femm_model.Magnet.angle"><code class="name">var <span class="ident">angle</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Returns magnets magnetization angle (x-axis = 0).</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>Angle of magnitization.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def angle(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Returns magnets magnetization angle (x-axis = 0).
+
+    Returns:
+        Q: Angle of magnitization.
+    &#34;&#34;&#34;
+
+    return Q(self._angle, &#39;deg&#39;)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Magnet.material"><code class="name">var <span class="ident">material</span> : str</code></dt>
+<dd>
+<div class="desc"><p>Magnet material.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>Magnet material.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def material(self) -&gt; str:
+    &#34;&#34;&#34;
+    Magnet material.
+
+    Returns:
+        str: Magnet material.
+    &#34;&#34;&#34;
+
+    return self._material</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="femm_model.Magnet.force"><code class="name flex">
+<span>def <span class="ident">force</span></span>(<span>self) ‑> pint.quantity.Quantity</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns force vector acting on magnet.</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>RuntimeError</code></dt>
+<dd>Model analysis must be run before calling.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>Force vector</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def force(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Returns force vector acting on magnet.
+
+    Raises:
+        RuntimeError: Model analysis must be run before calling.
+
+    Returns:
+        Q: Force vector 
+    &#34;&#34;&#34;
+
+    if self._model._solution_is_dirty:
+        raise RuntimeError(&#39;Model analysis has not been run.&#39;)
+
+    # Select the magnet, then calc the force on magnet via stress tensor.
+    femm.mo_clearblock()
+    femm.mo_groupselectblock(self.group)
+    fx = femm.mo_blockintegral(
+        self._model._block_integral_vars[&#39;Force from Stress Tensor - X&#39;])
+    fy = femm.mo_blockintegral(
+        self._model._block_integral_vars[&#39;Force from Stress Tensor - Y&#39;])
+
+    return Q([fx, fy], &#39;N&#39;)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="femm_model.Rect" href="#femm_model.Rect">Rect</a></b></code>:
+<ul class="hlist">
+<li><code><a title="femm_model.Rect.bbox" href="#femm_model.Rect.bbox">bbox</a></code></li>
+<li><code><a title="femm_model.Rect.center" href="#femm_model.Rect.center">center</a></code></li>
+<li><code><a title="femm_model.Rect.center_set" href="#femm_model.Rect.center_set">center_set</a></code></li>
+<li><code><a title="femm_model.Rect.group" href="#femm_model.Rect.group">group</a></code></li>
+<li><code><a title="femm_model.Rect.height" href="#femm_model.Rect.height">height</a></code></li>
+<li><code><a title="femm_model.Rect.ll" href="#femm_model.Rect.ll">ll</a></code></li>
+<li><code><a title="femm_model.Rect.ll_set" href="#femm_model.Rect.ll_set">ll_set</a></code></li>
+<li><code><a title="femm_model.Rect.lr" href="#femm_model.Rect.lr">lr</a></code></li>
+<li><code><a title="femm_model.Rect.select_by_group" href="#femm_model.Rect.select_by_group">select_by_group</a></code></li>
+<li><code><a title="femm_model.Rect.select_by_rect" href="#femm_model.Rect.select_by_rect">select_by_rect</a></code></li>
+<li><code><a title="femm_model.Rect.translate" href="#femm_model.Rect.translate">translate</a></code></li>
+<li><code><a title="femm_model.Rect.ul" href="#femm_model.Rect.ul">ul</a></code></li>
+<li><code><a title="femm_model.Rect.ul_set" href="#femm_model.Rect.ul_set">ul_set</a></code></li>
+<li><code><a title="femm_model.Rect.ur" href="#femm_model.Rect.ur">ur</a></code></li>
+<li><code><a title="femm_model.Rect.width" href="#femm_model.Rect.width">width</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="femm_model.Rect"><code class="flex name class">
+<span>class <span class="ident">Rect</span></span>
+<span>(</span><span>model: <a title="femm_model.Femm" href="#femm_model.Femm">Femm</a> = None, width: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, height: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, x: pint.quantity.Quantity = None, y: pint.quantity.Quantity = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for geometric manipulation.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Rect:
+    &#34;&#34;&#34;
+    Base class for geometric manipulation.
+    &#34;&#34;&#34;
+
+    def __init__(self,
+                 model: Femm = None,
+                 width: Q = Q(1, &#39;mm&#39;),
+                 height: Q = Q(1, &#39;mm&#39;),
+                 x: Q = None,
+                 y: Q = None):
+
+        if model is None:
+            raise ValueError(&#34;Model not specified.&#34;)
+
+        if x is None:
+            x = Q(model._default_create_x, model.units)
+        if y is None:
+            y = Q(model._default_create_y, model.units)
+
+        self._x1 = x.to(model.units).magnitude
+        self._x2 = self._x1 + width.to(model.units).magnitude
+        self._y1 = y.to(model.units).magnitude
+        self._y2 = self._y1 + height.to(model.units).magnitude
+
+        femm.mi_clearselected()
+        femm.mi_drawrectangle(self._x1, self._y1, self._x2, self._y2)
+
+        self._group = None
+        self.group = model.new_group_id()  # Use the method to take care of the details
+
+        self._model = model
+        self._model._mesh_is_dirty = True
+
+    def select_by_rect(self):
+        &#34;&#34;&#34;
+        Selects object by its defining rectangle so that it is active for operations.
+        &#34;&#34;&#34;
+        mode = 4  # All entity types selected
+        femm.mi_selectrectangle(
+            self._x1, self._y1, self._x2, self._y2, mode)
+
+    def select_by_group(self):
+        &#34;&#34;&#34;
+        Selects object by its group ID.
+        Object is given an ID upon creation for selection.
+        If group ID is changed, this method will select everything in the group.
+        &#34;&#34;&#34;
+        femm.mi_selectgroup(self._group)
+
+    @property
+    def group(self):
+        &#34;&#34;&#34;
+        Group number associated with object.
+        &#34;&#34;&#34;
+        return self._group
+
+    @group.setter
+    def group(self, value: int = None):
+        &#34;&#34;&#34;
+        Set group number associated with object
+        &#34;&#34;&#34;
+        if value is None:
+            raise ValueError(&#34;No group number provided&#34;)
+
+        self.select_by_rect()
+        femm.mi_setgroup(value)
+        self._group = value
+
+    @property
+    def center(self) -&gt; tuple:
+        &#34;&#34;&#34;
+        Tuple of center coordinates.
+        &#34;&#34;&#34;
+
+        x_c = np.mean([self._x1, self._x2])
+        y_c = np.mean([self._y1, self._y2])
+
+        return Q(np.array([x_c, y_c]), self._model.units)
+
+    @property
+    def width(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Returns width (x dimension) of rectangle.
+
+        Returns:
+            Q: Width of rectangle.
+        &#34;&#34;&#34;
+
+        return Q(self._x2 - self._x1, self._model.units)
+
+    @property
+    def height(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Returns height (y dimension) of rectangle.
+
+        Returns:
+            Q: Height of rectangle.
+        &#34;&#34;&#34;
+
+        return Q(self._y2 - self._y1, self._model.units)
+
+    @property
+    def ll(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower left corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower left corner of Rect.
+        &#34;&#34;&#34;
+
+        return Q(np.array([self._x1, self._y1]), self._model.units)
+
+    @property
+    def lr(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of lower right corner.
+
+        Returns:
+            Q: X &amp; Y coords of lower right corner of Rect.
+        &#34;&#34;&#34;
+
+        return Q(np.array([self._x2, self._y1]), self._model.units)
+
+    @property
+    def ul(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of upper left corner.
+
+        Returns:
+            Q: X &amp; Y coords of upper left corner of Rect.
+        &#34;&#34;&#34;
+
+        return Q(np.array([self._x1, self._y2]), self._model.units)
+
+    @property
+    def ur(self) -&gt; Q:
+        &#34;&#34;&#34;
+        Position of upper right corner.
+
+        Returns:
+            Q: X &amp; Y coords of upper right corner of Rect.
+        &#34;&#34;&#34;
+
+        return Q(np.array([self._x2, self._y2]), self._model.units)
+
+    @property
+    def bbox(self) -&gt; tuple:
+        &#34;&#34;&#34;
+        Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
+        bounding box lower left corner and x2,y2 represents the 
+        bounding box upper right corner.
+        &#34;&#34;&#34;
+
+        return Q([self._x1, self._y1, self._x2, self._y2], self._model.units)
+
+    def ll_set(self, x: Q = None, y: Q = None):
+        &#34;&#34;&#34;
+        Sets object lower left corner to specified positions.
+        If x or y position is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        # Unit conversions.
+        dx = 0
+        if x is not None:
+            if isinstance(x, Q):
+                x = x.to(self._model.units).magnitude
+            dx = x - self._x1
+
+        dy = 0
+        if y is not None:
+            if isinstance(y, Q):
+                y = y.to(self._model.units).magnitude
+            dy = y - self._y1
+
+        dx = Q(dx, self._model.units)
+        dy = Q(dy, self._model.units)
+
+        self.translate(dx, dy)
+
+    def ul_set(self, x: Q = None, y: Q = None):
+        &#34;&#34;&#34;
+        Sets object upper left corner to specified positions.
+        If x or y position is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        # Unit conversions.
+        dx = 0
+        if x is not None:
+            if isinstance(x, Q):
+                x = x.to(self._model.units).magnitude
+            dx = x - self._x1
+
+        dy = 0
+        if y is not None:
+            if isinstance(y, Q):
+                y = y.to(self._model.units).magnitude
+            dy = y - self._y2
+
+        dx = Q(dx, self._model.units)
+        dy = Q(dy, self._model.units)
+
+        self.translate(dx, dy)
+
+    def center_set(self, x: Q = None, y: Q = None):
+        &#34;&#34;&#34;
+        Sets object center to specified positions.
+        If x or y position is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        c = self.center.magnitude
+
+        # Unit conversions.
+        dx = 0
+        if x is not None:
+            if isinstance(x, Q):
+                x = x.to(self._model.units).magnitude
+            dx = x - c[0]
+
+        dy = 0
+        if y is not None:
+            if isinstance(y, Q):
+                y = y.to(self._model.units).magnitude
+            dy = y - c[1]
+
+        self.translate(dx, dy)
+
+    def translate(self, dx: Q = Q(0, &#39;mm&#39;), dy: Q = Q(0, &#39;mm&#39;)):
+        &#34;&#34;&#34;
+        Translates object specified distances in X &amp; Y.
+        If dx or dy is not specified, that coordinate is not changed.
+        &#34;&#34;&#34;
+
+        if isinstance(dx, Q):
+            dx = dx.to(self._model.units).magnitude
+        if isinstance(dy, Q):
+            dy = dy.to(self._model.units).magnitude
+
+        self.select_by_group()
+        femm.mi_movetranslate(dx, dy)
+        femm.mi_clearselected()
+
+        # Update internal data
+        self._x1 += dx
+        self._x2 += dx
+        self._y1 += dy
+        self._y2 += dy
+
+        self._model._mesh_is_dirty = True</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="femm_model.Magnet" href="#femm_model.Magnet">Magnet</a></li>
+<li><a title="femm_model.Track" href="#femm_model.Track">Track</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="femm_model.Rect.bbox"><code class="name">var <span class="ident">bbox</span> : tuple</code></dt>
+<dd>
+<div class="desc"><p>Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the
+bounding box lower left corner and x2,y2 represents the
+bounding box upper right corner.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bbox(self) -&gt; tuple:
+    &#34;&#34;&#34;
+    Returns tuple of (x1,y1,x2,y2) where x1,y1 represents the 
+    bounding box lower left corner and x2,y2 represents the 
+    bounding box upper right corner.
+    &#34;&#34;&#34;
+
+    return Q([self._x1, self._y1, self._x2, self._y2], self._model.units)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.center"><code class="name">var <span class="ident">center</span> : tuple</code></dt>
+<dd>
+<div class="desc"><p>Tuple of center coordinates.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def center(self) -&gt; tuple:
+    &#34;&#34;&#34;
+    Tuple of center coordinates.
+    &#34;&#34;&#34;
+
+    x_c = np.mean([self._x1, self._x2])
+    y_c = np.mean([self._y1, self._y2])
+
+    return Q(np.array([x_c, y_c]), self._model.units)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.group"><code class="name">var <span class="ident">group</span></code></dt>
+<dd>
+<div class="desc"><p>Group number associated with object.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def group(self):
+    &#34;&#34;&#34;
+    Group number associated with object.
+    &#34;&#34;&#34;
+    return self._group</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.height"><code class="name">var <span class="ident">height</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Returns height (y dimension) of rectangle.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>Height of rectangle.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def height(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Returns height (y dimension) of rectangle.
+
+    Returns:
+        Q: Height of rectangle.
+    &#34;&#34;&#34;
+
+    return Q(self._y2 - self._y1, self._model.units)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.ll"><code class="name">var <span class="ident">ll</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Position of lower left corner.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>X &amp; Y coords of lower left corner of Rect.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def ll(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Position of lower left corner.
+
+    Returns:
+        Q: X &amp; Y coords of lower left corner of Rect.
+    &#34;&#34;&#34;
+
+    return Q(np.array([self._x1, self._y1]), self._model.units)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.lr"><code class="name">var <span class="ident">lr</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Position of lower right corner.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>X &amp; Y coords of lower right corner of Rect.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def lr(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Position of lower right corner.
+
+    Returns:
+        Q: X &amp; Y coords of lower right corner of Rect.
+    &#34;&#34;&#34;
+
+    return Q(np.array([self._x2, self._y1]), self._model.units)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.ul"><code class="name">var <span class="ident">ul</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Position of upper left corner.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>X &amp; Y coords of upper left corner of Rect.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def ul(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Position of upper left corner.
+
+    Returns:
+        Q: X &amp; Y coords of upper left corner of Rect.
+    &#34;&#34;&#34;
+
+    return Q(np.array([self._x1, self._y2]), self._model.units)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.ur"><code class="name">var <span class="ident">ur</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Position of upper right corner.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>X &amp; Y coords of upper right corner of Rect.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def ur(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Position of upper right corner.
+
+    Returns:
+        Q: X &amp; Y coords of upper right corner of Rect.
+    &#34;&#34;&#34;
+
+    return Q(np.array([self._x2, self._y2]), self._model.units)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.width"><code class="name">var <span class="ident">width</span> : pint.quantity.Quantity</code></dt>
+<dd>
+<div class="desc"><p>Returns width (x dimension) of rectangle.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Q</code></dt>
+<dd>Width of rectangle.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def width(self) -&gt; Q:
+    &#34;&#34;&#34;
+    Returns width (x dimension) of rectangle.
+
+    Returns:
+        Q: Width of rectangle.
+    &#34;&#34;&#34;
+
+    return Q(self._x2 - self._x1, self._model.units)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="femm_model.Rect.center_set"><code class="name flex">
+<span>def <span class="ident">center_set</span></span>(<span>self, x: pint.quantity.Quantity = None, y: pint.quantity.Quantity = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sets object center to specified positions.
+If x or y position is not specified, that coordinate is not changed.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def center_set(self, x: Q = None, y: Q = None):
+    &#34;&#34;&#34;
+    Sets object center to specified positions.
+    If x or y position is not specified, that coordinate is not changed.
+    &#34;&#34;&#34;
+
+    c = self.center.magnitude
+
+    # Unit conversions.
+    dx = 0
+    if x is not None:
+        if isinstance(x, Q):
+            x = x.to(self._model.units).magnitude
+        dx = x - c[0]
+
+    dy = 0
+    if y is not None:
+        if isinstance(y, Q):
+            y = y.to(self._model.units).magnitude
+        dy = y - c[1]
+
+    self.translate(dx, dy)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.ll_set"><code class="name flex">
+<span>def <span class="ident">ll_set</span></span>(<span>self, x: pint.quantity.Quantity = None, y: pint.quantity.Quantity = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sets object lower left corner to specified positions.
+If x or y position is not specified, that coordinate is not changed.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def ll_set(self, x: Q = None, y: Q = None):
+    &#34;&#34;&#34;
+    Sets object lower left corner to specified positions.
+    If x or y position is not specified, that coordinate is not changed.
+    &#34;&#34;&#34;
+
+    # Unit conversions.
+    dx = 0
+    if x is not None:
+        if isinstance(x, Q):
+            x = x.to(self._model.units).magnitude
+        dx = x - self._x1
+
+    dy = 0
+    if y is not None:
+        if isinstance(y, Q):
+            y = y.to(self._model.units).magnitude
+        dy = y - self._y1
+
+    dx = Q(dx, self._model.units)
+    dy = Q(dy, self._model.units)
+
+    self.translate(dx, dy)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.select_by_group"><code class="name flex">
+<span>def <span class="ident">select_by_group</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Selects object by its group ID.
+Object is given an ID upon creation for selection.
+If group ID is changed, this method will select everything in the group.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def select_by_group(self):
+    &#34;&#34;&#34;
+    Selects object by its group ID.
+    Object is given an ID upon creation for selection.
+    If group ID is changed, this method will select everything in the group.
+    &#34;&#34;&#34;
+    femm.mi_selectgroup(self._group)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.select_by_rect"><code class="name flex">
+<span>def <span class="ident">select_by_rect</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Selects object by its defining rectangle so that it is active for operations.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def select_by_rect(self):
+    &#34;&#34;&#34;
+    Selects object by its defining rectangle so that it is active for operations.
+    &#34;&#34;&#34;
+    mode = 4  # All entity types selected
+    femm.mi_selectrectangle(
+        self._x1, self._y1, self._x2, self._y2, mode)</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.translate"><code class="name flex">
+<span>def <span class="ident">translate</span></span>(<span>self, dx: pint.quantity.Quantity = &lt;Quantity(0, &#x27;millimeter&#x27;)&gt;, dy: pint.quantity.Quantity = &lt;Quantity(0, &#x27;millimeter&#x27;)&gt;)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Translates object specified distances in X &amp; Y.
+If dx or dy is not specified, that coordinate is not changed.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def translate(self, dx: Q = Q(0, &#39;mm&#39;), dy: Q = Q(0, &#39;mm&#39;)):
+    &#34;&#34;&#34;
+    Translates object specified distances in X &amp; Y.
+    If dx or dy is not specified, that coordinate is not changed.
+    &#34;&#34;&#34;
+
+    if isinstance(dx, Q):
+        dx = dx.to(self._model.units).magnitude
+    if isinstance(dy, Q):
+        dy = dy.to(self._model.units).magnitude
+
+    self.select_by_group()
+    femm.mi_movetranslate(dx, dy)
+    femm.mi_clearselected()
+
+    # Update internal data
+    self._x1 += dx
+    self._x2 += dx
+    self._y1 += dy
+    self._y2 += dy
+
+    self._model._mesh_is_dirty = True</code></pre>
+</details>
+</dd>
+<dt id="femm_model.Rect.ul_set"><code class="name flex">
+<span>def <span class="ident">ul_set</span></span>(<span>self, x: pint.quantity.Quantity = None, y: pint.quantity.Quantity = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sets object upper left corner to specified positions.
+If x or y position is not specified, that coordinate is not changed.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def ul_set(self, x: Q = None, y: Q = None):
+    &#34;&#34;&#34;
+    Sets object upper left corner to specified positions.
+    If x or y position is not specified, that coordinate is not changed.
+    &#34;&#34;&#34;
+
+    # Unit conversions.
+    dx = 0
+    if x is not None:
+        if isinstance(x, Q):
+            x = x.to(self._model.units).magnitude
+        dx = x - self._x1
+
+    dy = 0
+    if y is not None:
+        if isinstance(y, Q):
+            y = y.to(self._model.units).magnitude
+        dy = y - self._y2
+
+    dx = Q(dx, self._model.units)
+    dy = Q(dy, self._model.units)
+
+    self.translate(dx, dy)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="femm_model.Track"><code class="flex name class">
+<span>class <span class="ident">Track</span></span>
+<span>(</span><span>model: <a title="femm_model.Femm" href="#femm_model.Femm">Femm</a> = None, circuit: <a title="femm_model.Circuit" href="#femm_model.Circuit">Circuit</a> = None, width: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, height: pint.quantity.Quantity = &lt;Quantity(1, &#x27;millimeter&#x27;)&gt;, x: pint.quantity.Quantity = None, y: pint.quantity.Quantity = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for geometric manipulation.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Track(Rect):
+    def __init__(self,
+                 model: Femm = None,
+                 circuit: Circuit = None,
+                 width: Q = Q(1, &#39;mm&#39;),
+                 height: Q = Q(1, &#39;mm&#39;),
+                 x: Q = None,
+                 y: Q = None):
+
+        # Init the Rect
+        super().__init__(model, width, height, x, y)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="femm_model.Rect" href="#femm_model.Rect">Rect</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="femm_model.Rect" href="#femm_model.Rect">Rect</a></b></code>:
+<ul class="hlist">
+<li><code><a title="femm_model.Rect.bbox" href="#femm_model.Rect.bbox">bbox</a></code></li>
+<li><code><a title="femm_model.Rect.center" href="#femm_model.Rect.center">center</a></code></li>
+<li><code><a title="femm_model.Rect.center_set" href="#femm_model.Rect.center_set">center_set</a></code></li>
+<li><code><a title="femm_model.Rect.group" href="#femm_model.Rect.group">group</a></code></li>
+<li><code><a title="femm_model.Rect.height" href="#femm_model.Rect.height">height</a></code></li>
+<li><code><a title="femm_model.Rect.ll" href="#femm_model.Rect.ll">ll</a></code></li>
+<li><code><a title="femm_model.Rect.ll_set" href="#femm_model.Rect.ll_set">ll_set</a></code></li>
+<li><code><a title="femm_model.Rect.lr" href="#femm_model.Rect.lr">lr</a></code></li>
+<li><code><a title="femm_model.Rect.select_by_group" href="#femm_model.Rect.select_by_group">select_by_group</a></code></li>
+<li><code><a title="femm_model.Rect.select_by_rect" href="#femm_model.Rect.select_by_rect">select_by_rect</a></code></li>
+<li><code><a title="femm_model.Rect.translate" href="#femm_model.Rect.translate">translate</a></code></li>
+<li><code><a title="femm_model.Rect.ul" href="#femm_model.Rect.ul">ul</a></code></li>
+<li><code><a title="femm_model.Rect.ul_set" href="#femm_model.Rect.ul_set">ul_set</a></code></li>
+<li><code><a title="femm_model.Rect.ur" href="#femm_model.Rect.ur">ur</a></code></li>
+<li><code><a title="femm_model.Rect.width" href="#femm_model.Rect.width">width</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="femm_model.Circuit" href="#femm_model.Circuit">Circuit</a></code></h4>
+<ul class="">
+<li><code><a title="femm_model.Circuit.current" href="#femm_model.Circuit.current">current</a></code></li>
+<li><code><a title="femm_model.Circuit.name" href="#femm_model.Circuit.name">name</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="femm_model.CoilConductorsDistributed" href="#femm_model.CoilConductorsDistributed">CoilConductorsDistributed</a></code></h4>
+<ul class="two-column">
+<li><code><a title="femm_model.CoilConductorsDistributed.bbox" href="#femm_model.CoilConductorsDistributed.bbox">bbox</a></code></li>
+<li><code><a title="femm_model.CoilConductorsDistributed.group" href="#femm_model.CoilConductorsDistributed.group">group</a></code></li>
+<li><code><a title="femm_model.CoilConductorsDistributed.ll" href="#femm_model.CoilConductorsDistributed.ll">ll</a></code></li>
+<li><code><a title="femm_model.CoilConductorsDistributed.ll_set" href="#femm_model.CoilConductorsDistributed.ll_set">ll_set</a></code></li>
+<li><code><a title="femm_model.CoilConductorsDistributed.lr" href="#femm_model.CoilConductorsDistributed.lr">lr</a></code></li>
+<li><code><a title="femm_model.CoilConductorsDistributed.name" href="#femm_model.CoilConductorsDistributed.name">name</a></code></li>
+<li><code><a title="femm_model.CoilConductorsDistributed.select_by_group" href="#femm_model.CoilConductorsDistributed.select_by_group">select_by_group</a></code></li>
+<li><code><a title="femm_model.CoilConductorsDistributed.translate" href="#femm_model.CoilConductorsDistributed.translate">translate</a></code></li>
+<li><code><a title="femm_model.CoilConductorsDistributed.ul" href="#femm_model.CoilConductorsDistributed.ul">ul</a></code></li>
+<li><code><a title="femm_model.CoilConductorsDistributed.ul_set" href="#femm_model.CoilConductorsDistributed.ul_set">ul_set</a></code></li>
+<li><code><a title="femm_model.CoilConductorsDistributed.ur" href="#femm_model.CoilConductorsDistributed.ur">ur</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="femm_model.CoilConductorsIndividual" href="#femm_model.CoilConductorsIndividual">CoilConductorsIndividual</a></code></h4>
+<ul class="">
+<li><code><a title="femm_model.CoilConductorsIndividual.bbox" href="#femm_model.CoilConductorsIndividual.bbox">bbox</a></code></li>
+<li><code><a title="femm_model.CoilConductorsIndividual.group" href="#femm_model.CoilConductorsIndividual.group">group</a></code></li>
+<li><code><a title="femm_model.CoilConductorsIndividual.ll" href="#femm_model.CoilConductorsIndividual.ll">ll</a></code></li>
+<li><code><a title="femm_model.CoilConductorsIndividual.lr" href="#femm_model.CoilConductorsIndividual.lr">lr</a></code></li>
+<li><code><a title="femm_model.CoilConductorsIndividual.name" href="#femm_model.CoilConductorsIndividual.name">name</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="femm_model.Femm" href="#femm_model.Femm">Femm</a></code></h4>
+<ul class="two-column">
+<li><code><a title="femm_model.Femm.analyze" href="#femm_model.Femm.analyze">analyze</a></code></li>
+<li><code><a title="femm_model.Femm.boundary_generate" href="#femm_model.Femm.boundary_generate">boundary_generate</a></code></li>
+<li><code><a title="femm_model.Femm.boundary_group" href="#femm_model.Femm.boundary_group">boundary_group</a></code></li>
+<li><code><a title="femm_model.Femm.materials" href="#femm_model.Femm.materials">materials</a></code></li>
+<li><code><a title="femm_model.Femm.mesh_generate" href="#femm_model.Femm.mesh_generate">mesh_generate</a></code></li>
+<li><code><a title="femm_model.Femm.new_group_id" href="#femm_model.Femm.new_group_id">new_group_id</a></code></li>
+<li><code><a title="femm_model.Femm.save_image" href="#femm_model.Femm.save_image">save_image</a></code></li>
+<li><code><a title="femm_model.Femm.units" href="#femm_model.Femm.units">units</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="femm_model.Magnet" href="#femm_model.Magnet">Magnet</a></code></h4>
+<ul class="">
+<li><code><a title="femm_model.Magnet.angle" href="#femm_model.Magnet.angle">angle</a></code></li>
+<li><code><a title="femm_model.Magnet.force" href="#femm_model.Magnet.force">force</a></code></li>
+<li><code><a title="femm_model.Magnet.material" href="#femm_model.Magnet.material">material</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="femm_model.Rect" href="#femm_model.Rect">Rect</a></code></h4>
+<ul class="two-column">
+<li><code><a title="femm_model.Rect.bbox" href="#femm_model.Rect.bbox">bbox</a></code></li>
+<li><code><a title="femm_model.Rect.center" href="#femm_model.Rect.center">center</a></code></li>
+<li><code><a title="femm_model.Rect.center_set" href="#femm_model.Rect.center_set">center_set</a></code></li>
+<li><code><a title="femm_model.Rect.group" href="#femm_model.Rect.group">group</a></code></li>
+<li><code><a title="femm_model.Rect.height" href="#femm_model.Rect.height">height</a></code></li>
+<li><code><a title="femm_model.Rect.ll" href="#femm_model.Rect.ll">ll</a></code></li>
+<li><code><a title="femm_model.Rect.ll_set" href="#femm_model.Rect.ll_set">ll_set</a></code></li>
+<li><code><a title="femm_model.Rect.lr" href="#femm_model.Rect.lr">lr</a></code></li>
+<li><code><a title="femm_model.Rect.select_by_group" href="#femm_model.Rect.select_by_group">select_by_group</a></code></li>
+<li><code><a title="femm_model.Rect.select_by_rect" href="#femm_model.Rect.select_by_rect">select_by_rect</a></code></li>
+<li><code><a title="femm_model.Rect.translate" href="#femm_model.Rect.translate">translate</a></code></li>
+<li><code><a title="femm_model.Rect.ul" href="#femm_model.Rect.ul">ul</a></code></li>
+<li><code><a title="femm_model.Rect.ul_set" href="#femm_model.Rect.ul_set">ul_set</a></code></li>
+<li><code><a title="femm_model.Rect.ur" href="#femm_model.Rect.ur">ur</a></code></li>
+<li><code><a title="femm_model.Rect.width" href="#femm_model.Rect.width">width</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="femm_model.Track" href="#femm_model.Track">Track</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
